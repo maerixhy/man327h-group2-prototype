@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { StoreProvider } from "@/lib/store";
+import Clarity from "@/components/Clarity";
 
 export const metadata: Metadata = {
   title: "Paper Trail",
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <StoreProvider>{children}</StoreProvider>
+        <Clarity />
       </body>
     </html>
   );
