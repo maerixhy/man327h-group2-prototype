@@ -1,4 +1,4 @@
-// Generates a simple receipt image for the seeded demo data.
+// Generates a simple receipt image for the starter data.
 export function fakeReceipt(vendor: string, lines: [string, number][]) {
   const total = lines.reduce((a, [, n]) => a + n, 0);
   const rows = lines

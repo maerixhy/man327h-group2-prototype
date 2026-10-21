@@ -2,18 +2,27 @@
 
 import { useState, type CSSProperties } from "react";
 import type { MemberLabel, ModuleKey, Org, PacketTemplate } from "@/lib/types";
-import { cap, fileToDataUrl, label, money, onColor } from "@/lib/util";
-import { Button, Card, Field, Input, OrgMark, Progress, Select } from "./ui";
+import { fileToDataUrl, money, onColor } from "@/lib/util";
+import { Button, Card, Field, Input, OrgMark, Select } from "./ui";
 
-const SWATCHES = ["#1f6f5c", "#bf5700", "#7c3aed", "#1d4ed8", "#be123c", "#0f172a", "#a16207", "#0e7490"];
+const SWATCHES = ["#1f6f5c", "#bf5700", "#6d3fc0", "#1d4ed8", "#a3123a", "#1b1a17", "#8a5a00", "#0e7490"];
 
 const MODULES: { key: ModuleKey; name: string; desc: string }[] = [
   { key: "dues", name: "Dues", desc: "Collect term dues with a tagged payment link." },
   { key: "events", name: "Event payments", desc: "Per-event links, budgets, and one-tap reminders." },
-  { key: "reimbursements", name: "Reimbursements", desc: "Receipt photo in, one queue, predictable payback dates." },
+  { key: "reimbursements", name: "Reimbursements", desc: "Officers submit receipts and see when they're paid back." },
   { key: "packets", name: "Funding packets", desc: "Build funding requests or grant reports from your receipts." },
   { key: "handoff", name: "Handoff", desc: "Pass the full record to the next treasurer in one click." },
 ];
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <Card className="p-5 md:p-6">
+      <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em]">{title}</h2>
+      <div className="mt-4 space-y-4">{children}</div>
+    </Card>
+  );
+}
 
 export default function OrgForm({
   initial,
@@ -31,8 +40,7 @@ export default function OrgForm({
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
       <div className="space-y-6">
-        <Card className="space-y-5 p-5 md:p-6">
-          <h2 className="font-display text-xl">Your group</h2>
+        <Section title="Your group">
           <Field label="Group name">
             <Input value={org.name} onChange={(e) => set("name", e.target.value)} />
           </Field>
@@ -41,14 +49,11 @@ export default function OrgForm({
               <Input value={org.term} onChange={(e) => set("term", e.target.value)} />
             </Field>
             <Field label="What do you call your people?">
-              <Select
-                value={org.memberLabel}
-                onChange={(e) => set("memberLabel", e.target.value as MemberLabel)}
-              >
-                <option value="members">Members (student orgs, clubs)</option>
-                <option value="families">Families (PTAs, schools)</option>
-                <option value="players">Players (teams, leagues)</option>
-                <option value="volunteers">Volunteers (nonprofits)</option>
+              <Select value={org.memberLabel} onChange={(e) => set("memberLabel", e.target.value as MemberLabel)}>
+                <option value="members">Members and officers (clubs)</option>
+                <option value="families">Families and board (PTAs)</option>
+                <option value="players">Players and team managers</option>
+                <option value="volunteers">Volunteers and coordinators</option>
               </Select>
             </Field>
           </div>
@@ -58,7 +63,7 @@ export default function OrgForm({
               <input
                 type="file"
                 accept="image/*"
-                className="text-sm text-stone-600 file:mr-3 file:rounded-lg file:border-0 file:bg-stone-100 file:px-3 file:py-2 file:text-sm"
+                className="min-w-0 text-sm text-muted file:mr-3 file:rounded-[3px] file:border file:border-rule-strong file:bg-sheet file:px-3 file:py-1.5 file:text-sm file:text-ink"
                 onChange={async (e) => {
                   const f = e.target.files?.[0];
                   if (f) set("logo", await fileToDataUrl(f, 256, "image/png"));
@@ -79,8 +84,8 @@ export default function OrgForm({
                   type="button"
                   aria-label={`Use ${c}`}
                   onClick={() => set("color", c)}
-                  className={`h-9 w-9 rounded-full ring-offset-2 transition ${
-                    org.color === c ? "ring-2 ring-stone-800" : ""
+                  className={`h-8 w-8 rounded-[3px] ring-offset-2 ring-offset-sheet transition ${
+                    org.color === c ? "ring-2 ring-ink" : ""
                   }`}
                   style={{ background: c }}
                 />
@@ -89,26 +94,23 @@ export default function OrgForm({
                 type="color"
                 value={org.color}
                 onChange={(e) => set("color", e.target.value)}
-                className="h-9 w-12 cursor-pointer rounded-lg border border-stone-300 bg-white"
+                className="h-8 w-11 cursor-pointer rounded-[3px] border border-rule-strong bg-sheet"
                 aria-label="Custom color"
               />
             </div>
           </Field>
-        </Card>
+        </Section>
 
-        <Card className="space-y-5 p-5 md:p-6">
-          <h2 className="font-display text-xl">Money basics</h2>
+        <Section title="Money basics">
           <div className="grid gap-4 sm:grid-cols-3">
-            <Field label="Venmo handle" hint="where payments go">
-              <Input
-                value={org.venmoHandle}
-                onChange={(e) => set("venmoHandle", e.target.value.replace(/^@/, ""))}
-              />
+            <Field label="Venmo handle">
+              <Input value={org.venmoHandle} onChange={(e) => set("venmoHandle", e.target.value.replace(/^@/, ""))} />
             </Field>
             <Field label="Dues per term">
               <Input
                 type="number"
                 min={0}
+                className="num"
                 value={org.duesAmount}
                 onChange={(e) => set("duesAmount", Number(e.target.value))}
               />
@@ -116,72 +118,61 @@ export default function OrgForm({
             <Field label="Starting balance">
               <Input
                 type="number"
+                className="num"
                 value={org.openingBalance}
                 onChange={(e) => set("openingBalance", Number(e.target.value))}
               />
             </Field>
           </div>
           <Field label="Funding report format">
-            <Select
-              value={org.packetTemplate}
-              onChange={(e) => set("packetTemplate", e.target.value as PacketTemplate)}
-            >
+            <Select value={org.packetTemplate} onChange={(e) => set("packetTemplate", e.target.value as PacketTemplate)}>
               <option value="university">University student org funding request</option>
               <option value="grant">Funder or grant expense report (nonprofits)</option>
             </Select>
           </Field>
-        </Card>
+        </Section>
 
-        <Card className="p-5 md:p-6">
-          <h2 className="font-display text-xl">Tabs to show</h2>
-          <p className="mt-1 text-sm text-stone-500">Turn off anything your group doesn&apos;t need.</p>
-          <div className="mt-4 divide-y divide-stone-100">
+        <Section title="Tabs to show">
+          <div className="-my-2 divide-y divide-rule">
             {MODULES.map((m) => (
-              <label key={m.key} className="flex cursor-pointer items-start gap-3 py-3">
+              <label key={m.key} className="flex cursor-pointer items-start gap-3 py-2.5">
                 <input
                   type="checkbox"
                   checked={org.modules[m.key]}
                   onChange={(e) => set("modules", { ...org.modules, [m.key]: e.target.checked })}
-                  className="mt-1 h-4 w-4 accent-[var(--brand)]"
+                  className="mt-0.5 h-4 w-4 accent-[var(--brand)]"
                   style={preview}
                 />
                 <span>
                   <span className="block text-sm font-medium">{m.name}</span>
-                  <span className="block text-sm text-stone-500">{m.desc}</span>
+                  <span className="block text-[13px] text-muted">{m.desc}</span>
                 </span>
               </label>
             ))}
           </div>
-        </Card>
+        </Section>
 
         <Button onClick={() => onSubmit(org)} className="w-full sm:w-auto" style={preview}>
           {submitLabel}
         </Button>
       </div>
 
-      {/* Live preview of what members see when they open a payment link */}
+      {/* Live preview of the payment link people open from the group chat */}
       <div className="lg:sticky lg:top-8 lg:self-start" style={preview}>
-        <div className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500">
-          What your {label(org.memberLabel).many} see
-        </div>
+        <div className="mb-2 text-[11px] font-medium uppercase tracking-[0.1em] text-muted">Payment link preview</div>
         <Card className="overflow-hidden">
-          <div className="bg-brand px-5 py-5 text-on-brand">
+          <div className="h-1.5 bg-brand" />
+          <div className="p-5">
             <div className="flex items-center gap-3">
-              <OrgMark name={org.name} logo={org.logo} size={40} onBrand />
+              <OrgMark name={org.name} logo={org.logo} size={36} />
               <div className="text-sm font-semibold">{org.name || "Your group"}</div>
             </div>
-            <div className="mt-5 text-xs opacity-80">{org.term} dues</div>
-            <div className="tabular font-display text-4xl">{money(org.duesAmount)}</div>
-          </div>
-          <div className="space-y-3 p-5">
-            <div className="text-sm text-stone-600">
-              {cap(label(org.memberLabel).many)} paid so far
-            </div>
-            <Progress value={0.72} />
-            <div className="rounded-xl bg-brand py-2.5 text-center text-sm font-medium text-on-brand">
+            <div className="mt-5 border-t border-rule pt-3 text-sm text-muted">{org.term} dues</div>
+            <div className="num text-4xl font-medium tracking-tight">{money(org.duesAmount)}</div>
+            <div className="mt-5 rounded-[3px] bg-brand py-2.5 text-center text-sm font-medium text-on-brand">
               Pay with Venmo
             </div>
-            <div className="text-center text-xs text-stone-400">to @{org.venmoHandle || "your-handle"}</div>
+            <div className="num mt-2 text-center text-xs text-muted">to @{org.venmoHandle || "your-handle"}</div>
           </div>
         </Card>
       </div>

@@ -5,11 +5,7 @@ export const uid = () => Math.random().toString(36).slice(2, 10);
 export const money = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 
-export const daysFromNow = (d: number) => {
-  const t = new Date();
-  t.setDate(t.getDate() + d);
-  return t.toISOString();
-};
+export const daysFromNow = (d: number) => new Date(Date.now() + d * 86400000).toISOString();
 
 export const addDays = (iso: string, d: number) => {
   const t = new Date(iso);
@@ -41,11 +37,25 @@ export const relDays = (iso: string) => {
   return d > 0 ? `in ${d} days` : `${-d} days ago`;
 };
 
-const LABELS: Record<MemberLabel, { one: string; many: string }> = {
-  members: { one: "member", many: "members" },
-  families: { one: "family", many: "families" },
-  volunteers: { one: "volunteer", many: "volunteers" },
-  players: { one: "player", many: "players" },
+export const time = (iso?: string) =>
+  iso ? new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : "";
+
+// "No. 0231", the way entries are numbered in an account book.
+export const entryNo = (n: number) => `No. ${String(n).padStart(4, "0")}`;
+
+export const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase())
+    .join("");
+
+const LABELS: Record<MemberLabel, { one: string; many: string; officer: string }> = {
+  members: { one: "member", many: "members", officer: "officer" },
+  families: { one: "family", many: "families", officer: "board member" },
+  volunteers: { one: "volunteer", many: "volunteers", officer: "coordinator" },
+  players: { one: "player", many: "players", officer: "team manager" },
 };
 
 export const label = (l: MemberLabel) => LABELS[l];

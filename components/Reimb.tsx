@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useStore } from "@/lib/store";
+import { addReimbursement } from "@/lib/selectors";
 import type { Reimbursement } from "@/lib/types";
 import { fileToDataUrl, money, shortDate, uid } from "@/lib/util";
 import { Button, Card, Field, Input, Select } from "./ui";
@@ -10,7 +11,7 @@ export function ReceiptThumb({ src, alt }: { src: string | null; alt: string }) 
   const [open, setOpen] = useState(false);
   if (!src)
     return (
-      <div className="flex h-16 w-12 shrink-0 items-center justify-center rounded-lg border border-dashed border-red-300 bg-red-50 text-center text-[10px] leading-tight text-red-600">
+      <div className="flex h-16 w-12 shrink-0 items-center justify-center rounded-[2px] border border-dashed border-red-ink/60 text-center text-[10px] leading-tight text-red-ink">
         No receipt
       </div>
     );
@@ -18,15 +19,12 @@ export function ReceiptThumb({ src, alt }: { src: string | null; alt: string }) 
     <>
       <button onClick={() => setOpen(true)} className="shrink-0" aria-label={`View receipt: ${alt}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={alt} className="h-16 w-12 rounded-lg border border-stone-200 object-cover" />
+        <img src={src} alt={alt} className="h-16 w-12 rounded-[2px] border border-rule object-cover" />
       </button>
       {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6"
-          onClick={() => setOpen(false)}
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6" onClick={() => setOpen(false)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={src} alt={alt} className="max-h-full max-w-full rounded-xl bg-white shadow-2xl" />
+          <img src={src} alt={alt} className="max-h-full max-w-full rounded-[2px] bg-white" />
         </div>
       )}
     </>
@@ -37,15 +35,15 @@ export function ReceiptThumb({ src, alt }: { src: string | null; alt: string }) 
 export function Timeline({ r }: { r: Reimbursement }) {
   if (r.status === "rejected")
     return (
-      <p className="text-sm text-red-700">
-        Sent back {shortDate(r.approvedAt)}: {r.rejectReason || "needs changes"}. Fix it and submit again.
+      <p className="text-sm text-red-ink">
+        Returned {shortDate(r.approvedAt)}: {r.rejectReason || "needs changes"}. Fix it and submit again.
       </p>
     );
   const steps = [
     { label: "Submitted", date: r.submittedAt, done: true },
     { label: "Approved", date: r.approvedAt, done: r.status !== "submitted" },
     {
-      label: r.status === "paid" ? "Paid back" : r.expectedBy ? `Expected by ${shortDate(r.expectedBy)}` : "Paid back",
+      label: r.status === "paid" ? "Paid back" : r.expectedBy ? `Due ${shortDate(r.expectedBy)}` : "Paid back",
       date: r.paidAt,
       done: r.status === "paid",
     },
@@ -55,17 +53,13 @@ export function Timeline({ r }: { r: Reimbursement }) {
       {steps.map((s, i) => (
         <li key={s.label} className="flex flex-1 flex-col items-start">
           <div className="flex w-full items-center">
-            <span
-              className={`h-3 w-3 shrink-0 rounded-full border-2 ${
-                s.done ? "border-brand bg-brand" : "border-stone-300 bg-white"
-              }`}
-            />
+            <span className={`h-2.5 w-2.5 shrink-0 rotate-45 border ${s.done ? "border-ink bg-ink" : "border-rule-strong bg-sheet"}`} />
             {i < steps.length - 1 && (
-              <span className={`h-0.5 flex-1 ${steps[i + 1].done ? "bg-brand" : "bg-stone-200"}`} />
+              <span className={`h-px flex-1 ${steps[i + 1].done ? "bg-ink" : "border-t border-dashed border-rule-strong"}`} />
             )}
           </div>
-          <span className={`mt-1.5 text-xs ${s.done ? "text-ink" : "text-stone-400"}`}>{s.label}</span>
-          {s.date && s.done && <span className="text-[11px] text-stone-400">{shortDate(s.date)}</span>}
+          <span className={`mt-1.5 text-xs ${s.done ? "text-ink" : "text-muted"}`}>{s.label}</span>
+          {s.date && s.done && <span className="num text-[11px] text-muted">{shortDate(s.date)}</span>}
         </li>
       ))}
     </ol>
@@ -73,33 +67,29 @@ export function Timeline({ r }: { r: Reimbursement }) {
 }
 
 export function ReimbursementForm({ onDone }: { onDone?: () => void }) {
-  const { state, update, log } = useStore();
+  const { state, me, update, log } = useStore();
   const [f, setF] = useState({ eventId: state.events[0]?.id ?? "", vendor: "", description: "", amount: "" });
   const [receipt, setReceipt] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const amount = Number(f.amount);
-  const ok = f.vendor && f.description && amount > 0;
+  const ok = me && f.vendor && f.description && amount > 0;
 
   const submit = () => {
     if (!ok) return;
-    update((s) => ({
-      ...s,
-      reimbursements: [
-        {
-          id: uid(),
-          submitterId: s.viewAs,
-          eventId: f.eventId || null,
-          vendor: f.vendor,
-          description: f.description,
-          amount,
-          receipt,
-          status: "submitted",
-          submittedAt: new Date().toISOString(),
-        },
-        ...s.reimbursements,
-      ],
-    }));
+    update((s) =>
+      addReimbursement(s, {
+        id: uid(),
+        submitterId: me.id,
+        eventId: f.eventId || null,
+        vendor: f.vendor,
+        description: f.description,
+        amount,
+        receipt,
+        status: "submitted",
+        submittedAt: new Date().toISOString(),
+      })
+    );
     log(`New reimbursement request: ${money(amount)} at ${f.vendor}`);
     setF({ ...f, vendor: "", description: "", amount: "" });
     setReceipt(null);
@@ -110,7 +100,7 @@ export function ReimbursementForm({ onDone }: { onDone?: () => void }) {
 
   return (
     <Card className="space-y-4 p-5">
-      <h3 className="font-display text-xl">Get paid back</h3>
+      <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em]">Get paid back</h3>
       <Field label="Receipt photo" hint="snap it at the register">
         <div className="flex items-center gap-3">
           <ReceiptThumb src={receipt} alt="New receipt" />
@@ -118,7 +108,7 @@ export function ReimbursementForm({ onDone }: { onDone?: () => void }) {
             type="file"
             accept="image/*"
             capture="environment"
-            className="w-full min-w-0 text-sm text-stone-600 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-soft file:px-3 file:py-2 file:text-sm file:font-medium file:text-brand"
+            className="w-full min-w-0 text-sm text-muted file:mr-3 file:rounded-[3px] file:border file:border-rule-strong file:bg-sheet file:px-3 file:py-1.5 file:text-sm file:text-ink"
             onChange={async (e) => {
               const file = e.target.files?.[0];
               if (!file) return;
@@ -147,6 +137,7 @@ export function ReimbursementForm({ onDone }: { onDone?: () => void }) {
           <Input
             inputMode="decimal"
             placeholder="0.00"
+            className="num"
             value={f.amount}
             onChange={(e) => setF({ ...f, amount: e.target.value.replace(/[^0-9.]/g, "") })}
           />
@@ -163,15 +154,13 @@ export function ReimbursementForm({ onDone }: { onDone?: () => void }) {
         </Field>
       </div>
       {!receipt && ok && (
-        <p className="text-xs text-amber-700">
-          No receipt yet. Requests without one get flagged before they go into a funding packet.
-        </p>
+        <p className="text-xs text-red-ink">No receipt yet. Funders will ask for one, so this line gets flagged in the packet.</p>
       )}
       <div className="flex items-center gap-3">
         <Button onClick={submit} disabled={!ok || busy}>
           Submit {amount > 0 ? money(amount) : ""}
         </Button>
-        {done && <span className="text-sm text-brand">Sent to the treasurer. Track it below.</span>}
+        {done && <span className="text-sm text-muted">Submitted. It&apos;s in the queue below.</span>}
       </div>
     </Card>
   );

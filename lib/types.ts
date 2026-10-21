@@ -17,13 +17,19 @@ export interface Org {
   modules: Record<ModuleKey, boolean>;
 }
 
+// Treasurer is an officer who also holds the books. Officers see everything; members see only their own account.
 export type Role = "treasurer" | "officer" | "member";
 
 export interface Member {
   id: string;
   name: string;
+  email: string;
   role: Role;
   title?: string;
+  avatar: string | null; // data URL
+  passwordHash: string | null; // null until they set a password
+  joinedAt: string;
+  source: "roster" | "link" | "added";
 }
 
 export interface OrgEvent {
@@ -40,18 +46,21 @@ export type PaymentTag = { kind: "dues" } | { kind: "event"; eventId: string };
 
 export interface Payment {
   id: string;
+  no: number; // entry number on the ledger
   memberId: string;
   amount: number;
   tag: PaymentTag;
   via: "venmo" | "cash" | "zelle";
   at: string;
   ref: string; // the tag code carried in the Venmo note
+  recordedBy?: string; // member id, for cash an officer logged
 }
 
 export type ReimbStatus = "submitted" | "approved" | "paid" | "rejected";
 
 export interface Reimbursement {
   id: string;
+  no: number;
   submitterId: string;
   eventId: string | null;
   vendor: string;
@@ -61,7 +70,10 @@ export interface Reimbursement {
   status: ReimbStatus;
   submittedAt: string;
   approvedAt?: string;
+  approvedBy?: string;
   paidAt?: string;
+  paidBy?: string;
+  paidNo?: number; // the payout's own ledger entry number
   expectedBy?: string;
   rejectReason?: string;
 }
@@ -77,6 +89,7 @@ export interface LogEntry {
   id: string;
   at: string;
   text: string;
+  by?: string; // member id
 }
 
 export interface State {
@@ -89,5 +102,5 @@ export interface State {
   reimbursements: Reimbursement[];
   reminders: Reminder[];
   log: LogEntry[];
-  viewAs: string; // member id, used to switch between treasurer and member views in the demo
+  seq: number; // next ledger entry number
 }

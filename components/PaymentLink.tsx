@@ -13,7 +13,7 @@ export default function PaymentLink({ path }: { path: string }) {
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-      <code className="min-w-0 flex-1 truncate rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-xs text-stone-600">
+      <code className="num min-w-0 flex-1 truncate rounded-[3px] border border-dashed border-rule-strong px-2.5 py-1.5 text-xs text-muted">
         {url}
       </code>
       <div className="flex gap-2">
@@ -33,9 +33,9 @@ export default function PaymentLink({ path }: { path: string }) {
         <Link
           href={path}
           target="_blank"
-          className="inline-flex items-center rounded-xl px-3 py-1.5 text-sm font-medium text-brand hover:bg-brand-soft"
+          className="inline-flex items-center px-2 py-1 text-[13px] font-medium text-brand-ink hover:underline"
         >
-          Open as member ↗
+          Open ↗
         </Link>
       </div>
     </div>

@@ -2,73 +2,77 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { useStore } from "@/lib/store";
-import { isAdmin, viewer } from "@/lib/selectors";
+import { isOfficer, roleLabel } from "@/lib/selectors";
 import type { ModuleKey } from "@/lib/types";
-import { Button, Card, OrgMark } from "./ui";
+import { cap, label } from "@/lib/util";
+import { Avatar, OrgMark, ThemeSwitch } from "./ui";
 
 type NavItem = { href: string; label: string; module?: ModuleKey };
 
-const ADMIN_NAV: NavItem[] = [
-  { href: "/dashboard", label: "Overview" },
-  { href: "/ledger", label: "Ledger" },
-  { href: "/dues", label: "Dues", module: "dues" },
-  { href: "/events", label: "Events", module: "events" },
-  { href: "/reimbursements", label: "Reimbursements", module: "reimbursements" },
-  { href: "/packets", label: "Funding packets", module: "packets" },
-  { href: "/handoff", label: "Handoff", module: "handoff" },
-  { href: "/settings", label: "Settings" },
-];
-
-const MEMBER_NAV: NavItem[] = [{ href: "/me", label: "My account" }];
+// Pages anyone signed in can open. Everything else is for officers.
+const OPEN_TO_ALL = ["/me", "/profile", "/receipt"];
 
 export default function AppShell({ children }: { children: ReactNode }) {
-  const { state, ready, update } = useStore();
+  const { state, ready, me } = useStore();
   const pathname = usePathname();
   const router = useRouter();
+  const officer = isOfficer(me);
+  const allowed = officer || OPEN_TO_ALL.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
   useEffect(() => {
-    if (ready && !state.onboarded) router.replace("/onboarding");
-  }, [ready, state.onboarded, router]);
+    if (!ready) return;
+    if (!state.onboarded) router.replace("/");
+    else if (!me) router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+    else if (!allowed) router.replace("/me");
+  }, [ready, state.onboarded, me, allowed, pathname, router]);
 
-  if (!ready || !state.onboarded) {
-    return <div className="p-10 text-sm text-stone-500">Loading workspace…</div>;
-  }
+  if (!ready || !state.onboarded || !me || !allowed) return null;
 
-  const admin = isAdmin(state);
-  const me = viewer(state);
-  const nav = (admin ? ADMIN_NAV : MEMBER_NAV).filter((n) => !n.module || state.org.modules[n.module]);
-  const blocked = !admin && pathname !== "/me";
-
-  const switchTo = (id: string) => {
-    const next = state.members.find((m) => m.id === id);
-    update((s) => ({ ...s, viewAs: id }));
-    if (next?.role === "member") router.push("/me");
-    else if (pathname === "/me") router.push("/dashboard");
-  };
+  const L = label(state.org.memberLabel);
+  const officerNav: NavItem[] = [
+    { href: "/dashboard", label: "Overview" },
+    { href: "/ledger", label: "Ledger" },
+    { href: "/dues", label: "Dues", module: "dues" },
+    { href: "/events", label: "Events", module: "events" },
+    { href: "/reimbursements", label: "Reimbursements", module: "reimbursements" },
+    { href: "/packets", label: "Funding packets", module: "packets" },
+    { href: "/members", label: cap(L.many) },
+    { href: "/handoff", label: "Handoff", module: "handoff" },
+    { href: "/settings", label: "Settings" },
+  ];
+  const memberNav: NavItem[] = [
+    { href: "/me", label: "My account" },
+    { href: "/profile", label: "Profile" },
+  ];
+  const nav = (officer ? officerNav : memberNav).filter((n) => !n.module || state.org.modules[n.module]);
 
   return (
     <div className="min-h-dvh md:flex">
-      {/* Sidebar on desktop, top bar on mobile */}
-      <aside className="no-print border-b border-stone-200 bg-white md:sticky md:top-0 md:h-dvh md:w-64 md:shrink-0 md:border-r md:border-b-0">
-        <div className="flex items-center gap-3 px-4 py-4 md:px-5 md:py-6">
-          <OrgMark name={state.org.name} logo={state.org.logo} />
-          <div className="min-w-0">
-            <div className="truncate text-sm font-semibold text-ink">{state.org.name}</div>
-            <div className="text-xs text-stone-500">{state.org.term}</div>
+      <aside className="no-print border-b border-rule bg-paper md:sticky md:top-0 md:flex md:h-dvh md:w-60 md:shrink-0 md:flex-col md:border-r md:border-b-0">
+        <div className="flex items-center justify-between gap-3 px-4 pt-4 pb-3 md:px-5 md:pt-6 md:pb-5">
+          <Link href={officer ? "/dashboard" : "/me"} className="flex min-w-0 items-center gap-2.5">
+            <OrgMark name={state.org.name} logo={state.org.logo} size={32} />
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold leading-tight text-ink">{state.org.name}</div>
+              <div className="num text-[11px] text-muted">{state.org.term}</div>
+            </div>
+          </Link>
+          <div className="md:hidden">
+            <AccountMenu up={false} />
           </div>
         </div>
 
-        <nav className="flex gap-1 overflow-x-auto px-3 pb-3 md:flex-col md:overflow-visible md:pb-0">
+        <nav className="flex gap-4 overflow-x-auto px-4 pb-2 md:flex-1 md:flex-col md:gap-0 md:overflow-visible md:px-3 md:pb-0">
           {nav.map((n) => {
             const active = pathname === n.href || pathname.startsWith(n.href + "/");
             return (
               <Link
                 key={n.href}
                 href={n.href}
-                className={`shrink-0 rounded-xl px-3 py-2 text-sm transition ${
-                  active ? "bg-brand-soft font-medium text-brand" : "text-stone-600 hover:bg-stone-100"
+                className={`shrink-0 border-b-2 py-1.5 text-sm transition md:border-b-0 md:border-l-2 md:px-3 md:py-[7px] ${
+                  active ? "border-ink font-semibold text-ink" : "border-transparent text-muted hover:text-ink"
                 }`}
               >
                 {n.label}
@@ -77,42 +81,65 @@ export default function AppShell({ children }: { children: ReactNode }) {
           })}
         </nav>
 
-        <div className="border-t border-stone-100 px-4 py-3 md:absolute md:bottom-0 md:w-64 md:px-5 md:py-5">
-          <label className="block text-[11px] font-medium uppercase tracking-wide text-stone-400">
-            Demo: viewing as
-          </label>
-          <select
-            value={me.id}
-            onChange={(e) => switchTo(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-stone-200 bg-stone-50 px-2 py-1.5 text-sm"
-          >
-            {state.members.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name}
-                {m.role !== "member" ? ` (${m.title ?? m.role})` : ""}
-              </option>
-            ))}
-          </select>
-          <div className="mt-3 hidden items-center gap-1.5 text-xs text-stone-400 md:flex">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-brand" /> Powered by Paper Trail
-          </div>
+        <div className="hidden border-t border-rule px-3 py-3 md:block">
+          <AccountMenu up />
         </div>
       </aside>
 
-      <main className="mx-auto w-full max-w-5xl px-4 py-6 md:px-10 md:py-10">
-        {blocked ? (
-          <Card className="p-8 text-center">
-            <p className="text-sm text-stone-600">
-              This page is for the board. You&apos;re viewing as {me.name}, a general member.
-            </p>
-            <Button className="mt-4" onClick={() => router.push("/me")}>
-              Go to my account
-            </Button>
-          </Card>
-        ) : (
-          children
-        )}
-      </main>
+      <main className="mx-auto w-full max-w-5xl px-4 py-6 md:px-10 md:py-10">{children}</main>
     </div>
+  );
+}
+
+function AccountMenu({ up }: { up: boolean }) {
+  const { state, me, signOut } = useStore();
+  const router = useRouter();
+  const officer = isOfficer(me);
+  const ref = useRef<HTMLDetailsElement>(null);
+  const close = () => ref.current?.removeAttribute("open");
+  if (!me) return null;
+  return (
+    <details ref={ref} className="group relative">
+      <summary className="flex cursor-pointer list-none items-center gap-2.5 rounded-[3px] px-1 py-1 hover:bg-ink/5 [&::-webkit-details-marker]:hidden">
+        <Avatar name={me.name} src={me.avatar} size={30} />
+        <span className="hidden min-w-0 flex-1 md:block">
+          <span className="block truncate text-sm font-medium leading-tight">{me.name}</span>
+          <span className="block truncate text-xs text-muted">{roleLabel(state, me)}</span>
+        </span>
+        <span className="hidden text-xs text-faint md:block">⋯</span>
+      </summary>
+      <div
+        className={`absolute z-40 w-56 rounded-[3px] border border-rule-strong bg-sheet py-1 text-sm ${
+          up ? "bottom-full left-0 mb-2" : "top-full right-0 mt-2"
+        }`}
+      >
+        <div className="border-b border-rule px-3 py-2">
+          <div className="truncate font-medium">{me.name}</div>
+          <div className="num truncate text-xs text-muted">{me.email}</div>
+        </div>
+        <Link href="/profile" onClick={close} className="block px-3 py-1.5 hover:bg-ink/5">
+          Profile
+        </Link>
+        {officer && (
+          <Link href="/me" onClick={close} className="block px-3 py-1.5 hover:bg-ink/5">
+            My payments
+          </Link>
+        )}
+        <div className="flex items-center justify-between gap-2 px-3 py-1.5">
+          <span className="text-muted">Theme</span>
+          <ThemeSwitch />
+        </div>
+        <button
+          onClick={() => {
+            close();
+            signOut();
+            router.push("/login");
+          }}
+          className="block w-full border-t border-rule px-3 py-1.5 text-left hover:bg-ink/5"
+        >
+          Sign out
+        </button>
+      </div>
+    </details>
   );
 }

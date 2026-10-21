@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { collection, eventSpend } from "@/lib/selectors";
 import { money, relDays, shortDate, uid } from "@/lib/util";
-import { Button, Card, Field, Input, PageHeader, Progress } from "@/components/ui";
+import { Button, Card, Empty, Field, Input, PageHeader } from "@/components/ui";
 
 export default function Events() {
   const { state, update, log } = useStore();
@@ -30,12 +30,15 @@ export default function Events() {
     <>
       <PageHeader
         title="Events"
-        sub="Each event gets its own payment link, so money arrives already tagged to it."
-        action={<Button onClick={() => setOpen((v) => !v)}>{open ? "Cancel" : "New event"}</Button>}
+        action={
+          <Button size="sm" variant={open ? "secondary" : "primary"} onClick={() => setOpen((v) => !v)}>
+            {open ? "Cancel" : "New event"}
+          </Button>
+        }
       />
 
       {open && (
-        <Card className="mb-6 grid gap-4 p-5 sm:grid-cols-2">
+        <Card className="mb-8 grid gap-4 p-5 sm:grid-cols-2">
           <Field label="Event name">
             <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </Field>
@@ -50,6 +53,7 @@ export default function Events() {
               <Input
                 type="number"
                 min={0}
+                className="num"
                 value={form.price}
                 onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
               />
@@ -58,6 +62,7 @@ export default function Events() {
               <Input
                 type="number"
                 min={0}
+                className="num"
                 value={form.budget}
                 onChange={(e) => setForm({ ...form, budget: Number(e.target.value) })}
               />
@@ -76,39 +81,55 @@ export default function Events() {
         </Card>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {events.map((e) => {
-          const c = collection(state, { kind: "event", eventId: e.id });
-          const sp = eventSpend(state, e.id);
-          const past = new Date(e.date) < new Date();
-          return (
-            <Link key={e.id} href={`/events/${e.id}`}>
-              <Card className="h-full p-5 transition hover:border-brand-line">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="font-display text-xl">{e.name}</div>
-                    <div className="mt-0.5 text-xs text-stone-500">
-                      {shortDate(e.date)} · {past ? "happened " : ""}
-                      {relDays(e.date)} · {money(e.price)}/person
-                    </div>
-                  </div>
-                  <div className="tabular text-right">
-                    <div className="text-2xl font-semibold text-brand">{Math.round(c.pct * 100)}%</div>
-                    <div className="text-xs text-stone-500">collected</div>
-                  </div>
-                </div>
-                <Progress value={c.pct} className="mt-4" />
-                <div className="tabular mt-3 flex justify-between text-xs text-stone-500">
-                  <span>{c.unpaid.length} unpaid</span>
-                  <span>
-                    Spent {money(sp.committed)} / {money(e.budget)}
-                  </span>
-                </div>
-              </Card>
-            </Link>
-          );
-        })}
-      </div>
+      {events.length === 0 ? (
+        <Empty>No events yet. Add one and it gets its own payment link and budget line.</Empty>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[560px] text-sm">
+            <thead>
+              <tr className="border-b border-ink text-left text-[10.5px] uppercase tracking-wider text-muted">
+                <th className="py-2 font-medium">Event</th>
+                <th className="py-2 font-medium">Date</th>
+                <th className="py-2 text-right font-medium">Price</th>
+                <th className="py-2 text-right font-medium">Collected</th>
+                <th className="py-2 text-right font-medium">Unpaid</th>
+                <th className="py-2 text-right font-medium">Spent / budget</th>
+              </tr>
+            </thead>
+            <tbody>
+              {events.map((e) => {
+                const c = collection(state, { kind: "event", eventId: e.id });
+                const sp = eventSpend(state, e.id);
+                const past = new Date(e.date) < new Date();
+                return (
+                  <tr key={e.id} className={`border-b border-rule ${past ? "text-muted" : ""}`}>
+                    <td className="py-3">
+                      <Link href={`/events/${e.id}`} className="font-medium text-ink hover:underline">
+                        {e.name}
+                      </Link>
+                      <div className="text-xs text-muted">{e.location}</div>
+                    </td>
+                    <td className="num py-3 text-[13px]">
+                      {shortDate(e.date)}
+                      <div className="font-sans text-xs text-faint">{relDays(e.date)}</div>
+                    </td>
+                    <td className="num py-3 text-right text-[13px]">{money(e.price)}</td>
+                    <td className="num py-3 text-right text-[13px]">
+                      {money(c.collected)}
+                      <div className="text-[11px] text-faint">{Math.round(c.pct * 100)}%</div>
+                    </td>
+                    <td className="num py-3 text-right text-[13px]">{c.unpaid.length}</td>
+                    <td className="num py-3 text-right text-[13px]">
+                      <span className={sp.committed > e.budget ? "text-red-ink" : ""}>{money(sp.committed)}</span>
+                      <span className="text-muted"> / {money(e.budget)}</span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </>
   );
 }

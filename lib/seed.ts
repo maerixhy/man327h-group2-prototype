@@ -12,8 +12,13 @@ export function seedState(): State {
   const members: Member[] = names.map((name, i) => ({
     id: `m${i + 1}`,
     name,
+    email: `${name.toLowerCase().replace(" ", ".")}@sunriseut.org`,
     role: i === 0 ? "treasurer" : i < 3 ? "officer" : "member",
     title: i === 0 ? "Treasurer" : i === 1 ? "Events Chair" : i === 2 ? "President" : undefined,
+    avatar: null,
+    passwordHash: null,
+    joinedAt: daysFromNow(-60),
+    source: "roster",
   }));
 
   const events = [
@@ -50,14 +55,17 @@ export function seedState(): State {
   let n = 0;
   const pay = (memberIdx: number[], amount: number, tag: Payment["tag"], daysAgoStart: number) => {
     memberIdx.forEach((i, k) => {
+      const cash = k % 7 === 6;
       payments.push({
         id: `p${++n}`,
+        no: 0,
         memberId: `m${i}`,
         amount,
         tag,
-        via: k % 7 === 6 ? "cash" : "venmo",
+        via: cash ? "cash" : "venmo",
         at: daysFromNow(-(daysAgoStart - k * 0.6)),
         ref: tagCode(tag),
+        recordedBy: cash ? "m1" : undefined,
       });
     });
   };
@@ -69,6 +77,7 @@ export function seedState(): State {
   const reimbursements: Reimbursement[] = [
     {
       id: "r1",
+      no: 0,
       submitterId: "m2",
       eventId: "formal",
       vendor: "Texas Union Events",
@@ -78,10 +87,12 @@ export function seedState(): State {
       status: "approved",
       submittedAt: daysFromNow(-6),
       approvedAt: daysFromNow(-2),
+      approvedBy: "m1",
       expectedBy: daysFromNow(3),
     },
     {
       id: "r2",
+      no: 0,
       submitterId: "m5",
       eventId: "games",
       vendor: "H-E-B",
@@ -97,12 +108,15 @@ export function seedState(): State {
       status: "paid",
       submittedAt: daysFromNow(-10),
       approvedAt: daysFromNow(-9),
+      approvedBy: "m1",
       paidAt: daysFromNow(-8),
+      paidBy: "m1",
       expectedBy: daysFromNow(-8),
     },
     {
       id: "r3",
-      submitterId: "m7",
+      no: 0,
+      submitterId: "m3",
       eventId: "games",
       vendor: "Target",
       description: "Two card games",
@@ -113,7 +127,8 @@ export function seedState(): State {
     },
     {
       id: "r4",
-      submitterId: "m9",
+      no: 0,
+      submitterId: "m2",
       eventId: "culture",
       vendor: "Party City",
       description: "Table decorations and banners",
@@ -128,8 +143,19 @@ export function seedState(): State {
     },
   ];
 
+  // Number every entry in the order it happened, starting where last term's book left off.
+  const FIRST = 214;
+  const entries: { at: string; set: (n: number) => void }[] = [
+    ...payments.map((p) => ({ at: p.at, set: (n: number) => (p.no = n) })),
+    ...reimbursements.map((r) => ({ at: r.submittedAt, set: (n: number) => (r.no = n) })),
+    ...reimbursements
+      .filter((r) => r.paidAt)
+      .map((r) => ({ at: r.paidAt!, set: (n: number) => (r.paidNo = n) })),
+  ];
+  entries.sort((a, b) => a.at.localeCompare(b.at)).forEach((x, i) => x.set(FIRST + i));
+
   return {
-    version: 1,
+    version: 2,
     onboarded: false,
     org: {
       name: "Sunrise Cultural Association",
@@ -149,9 +175,9 @@ export function seedState(): State {
     reimbursements,
     reminders: [],
     log: [
-      { id: "l1", at: daysFromNow(-8), text: "Paid back Maya Chen $86.42 for Game Night snacks" },
-      { id: "l2", at: daysFromNow(-2), text: "Approved Jordan Lee's $400.00 Fall Formal deposit" },
+      { id: "l1", at: daysFromNow(-8), text: "Paid back Maya Chen $86.42 for Game Night snacks", by: "m1" },
+      { id: "l2", at: daysFromNow(-2), text: "Approved Jordan Lee's $400.00 Fall Formal deposit", by: "m1" },
     ],
-    viewAs: "m1",
+    seq: FIRST + entries.length,
   };
 }
