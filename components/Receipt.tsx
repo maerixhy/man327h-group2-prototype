@@ -6,6 +6,7 @@ export type ReceiptData = {
   item: string;
   amount: number;
   payer: string;
+  from?: string; // payer's Venmo handle
   no: number;
   id: string;
   at: string;
@@ -22,6 +23,7 @@ export const txnNo = (no: number, id: string) =>
 export default function Receipt({ r, className = "" }: { r: ReceiptData; className?: string }) {
   const rows: [string, string][] = [
     ["Paid by", r.payer],
+    ...(r.from && r.via === "venmo" ? ([["From", `@${r.from}`]] as [string, string][]) : []),
     ["Method", r.via === "cash" ? "Cash" : r.via === "zelle" ? "Zelle" : "Venmo"],
     ...(r.to && r.via === "venmo" ? ([["To", `@${r.to}`]] as [string, string][]) : []),
     ["Tag", r.code],

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { eventName, isOfficer, memberName, memberObligations, memberTotals, tagName, tagPath } from "@/lib/selectors";
 import { entryNo, money, relDays, shortDate } from "@/lib/util";
-import { ButtonLink, Caption, PageHeader, SectionTitle, Stamp, StatusStamp } from "@/components/ui";
+import { ButtonLink, Caption, Notice, PageHeader, SectionTitle, Stamp, StatusStamp } from "@/components/ui";
 import { Timeline } from "@/components/Reimb";
 
 export default function Me() {
@@ -19,7 +19,17 @@ export default function Me() {
 
   return (
     <>
-      <PageHeader title="My account" />
+      <PageHeader title={isOfficer(me) ? "My payments" : "Dashboard"} />
+      {!me.venmo && (
+        <div className="mb-6">
+          <Notice>
+            <Link href="/profile" className="font-medium hover:underline">
+              Add your Venmo handle
+            </Link>{" "}
+            so the treasurer can match your payments to you.
+          </Notice>
+        </div>
+      )}
 
       <div className="grid gap-x-10 gap-y-2 sm:grid-cols-2">
         <div>

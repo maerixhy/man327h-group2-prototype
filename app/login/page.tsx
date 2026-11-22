@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
-import { isOfficer } from "@/lib/selectors";
+import { homePath } from "@/lib/selectors";
 import { normEmail } from "@/lib/auth";
 import { Button, Field, Input, Notice, OrgMark } from "@/components/ui";
 
@@ -23,7 +23,7 @@ function LoginForm() {
 
   if (!ready || !state.onboarded) return null;
 
-  const home = (officer: boolean) => (next && next.startsWith("/") ? next : officer ? "/dashboard" : "/me");
+  const home = (m: Parameters<typeof homePath>[0]) => (next && next.startsWith("/") ? next : homePath(m));
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,11 +31,11 @@ function LoginForm() {
     setBusy(true);
     const m = await signIn(email, password);
     setBusy(false);
-    if (m) return router.push(home(isOfficer(m)));
+    if (m) return router.push(home(m));
     const known = state.members.find((x) => normEmail(x.email) === normEmail(email));
     setError(
       known && !known.passwordHash
-        ? "That account doesn't have a password yet. Ask an officer to set a temporary one for you."
+        ? "That account doesn't have a password yet. Ask the treasurer to set a temporary one for you."
         : "That email and password don't match."
     );
   };
@@ -56,7 +56,7 @@ function LoginForm() {
             <p>
               You&apos;re signed in as <span className="font-medium">{me.name}</span>.
             </p>
-            <Button className="w-full" onClick={() => router.push(home(isOfficer(me)))}>
+            <Button className="w-full" onClick={() => router.push(home(me))}>
               Continue as {me.name.split(" ")[0]}
             </Button>
             <Button variant="secondary" className="w-full" onClick={signOut}>
@@ -82,16 +82,22 @@ function LoginForm() {
               Sign in
             </Button>
             <p className="text-xs leading-relaxed text-muted">
-              Forgot your password? Any officer can set a temporary one from the member list.
+              Forgot your password? The treasurer can set a temporary one for you.
             </p>
           </form>
         )}
 
-        <div className="mt-10 border-t border-rule pt-4 text-xs text-muted">
-          <Link href="/" className="hover:text-ink">
-            ← Paper Trail
-          </Link>
-        </div>
+        {!me && (
+          <p className="mt-6 border-t border-rule pt-4 text-sm text-muted">
+            New to {state.org.name}?{" "}
+            <Link
+              href={`/join${next ? `?next=${encodeURIComponent(next)}` : ""}`}
+              className="font-medium text-ink hover:underline"
+            >
+              Create an account
+            </Link>
+          </p>
+        )}
       </div>
     </div>
   );

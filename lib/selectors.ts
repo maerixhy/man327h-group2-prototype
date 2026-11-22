@@ -9,6 +9,9 @@ export const treasurer = (s: State): Member | undefined =>
 
 export const isOfficer = (m: Member | null | undefined) => !!m && m.role !== "member";
 
+// Where someone lands after signing in: officers get the overview, members their own dashboard.
+export const homePath = (m: Member | null | undefined) => (isOfficer(m) ? "/dashboard" : "/me");
+
 // "Treasurer", "Events Chair", or the group's word for an officer or member.
 export const roleLabel = (s: State, m: Member) => {
   const L = label(s.org.memberLabel);
@@ -80,7 +83,7 @@ export function memberTotals(s: State, memberId: string) {
 // Everything a member could pay this term, and whether they have.
 export function memberObligations(s: State, memberId: string) {
   const items: { tag: PaymentTag; name: string; price: number; date?: string; past: boolean }[] = [];
-  if (s.org.modules.dues) items.push({ tag: { kind: "dues" }, name: tagName(s, { kind: "dues" }), price: s.org.duesAmount, past: false });
+  if (s.org.modules.dues && s.org.duesAmount > 0) items.push({ tag: { kind: "dues" }, name: tagName(s, { kind: "dues" }), price: s.org.duesAmount, past: false });
   if (s.org.modules.events)
     s.events.forEach((e) =>
       items.push({

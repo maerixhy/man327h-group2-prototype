@@ -162,6 +162,24 @@ export default function Reimbursements() {
 
                   {r.status === "approved" && (
                     <div className="mt-4 flex flex-wrap items-center gap-3">
+                      {(() => {
+                        // Pay back straight to the Venmo on their profile, with the amount and entry filled in.
+                        const handle = state.members.find((m) => m.id === r.submitterId)?.venmo;
+                        return handle ? (
+                          <a
+                            href={`https://venmo.com/${handle}?txn=pay&amount=${r.amount.toFixed(2)}&note=${encodeURIComponent(
+                              `Reimbursement ${entryNo(r.no)}: ${r.vendor}`
+                            )}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center rounded-[3px] border border-rule-strong px-2.5 py-1 text-[13px] font-medium hover:border-ink"
+                          >
+                            Pay <span className="num mx-1">@{handle}</span> on Venmo ↗
+                          </a>
+                        ) : (
+                          <span className="text-xs text-muted">No Venmo on their profile.</span>
+                        );
+                      })()}
                       <Button
                         size="sm"
                         onClick={() => {

@@ -2,8 +2,8 @@
 
 import { useState, type CSSProperties } from "react";
 import type { MemberLabel, ModuleKey, Org, PacketTemplate } from "@/lib/types";
-import { fileToDataUrl, money, onColor } from "@/lib/util";
-import { Button, Card, Field, Input, OrgMark, Select } from "./ui";
+import { fileToDataUrl, money, normHandle, onColor } from "@/lib/util";
+import { Button, Card, Field, Input, Notice, OrgMark, Select } from "./ui";
 
 const SWATCHES = ["#1f6f5c", "#bf5700", "#6d3fc0", "#1d4ed8", "#a3123a", "#1b1a17", "#8a5a00", "#0e7490"];
 
@@ -28,10 +28,12 @@ export default function OrgForm({
   initial,
   submitLabel,
   onSubmit,
+  error,
 }: {
   initial: Org;
   submitLabel: string;
   onSubmit: (org: Org) => void;
+  error?: string | null;
 }) {
   const [org, setOrg] = useState<Org>(initial);
   const set = <K extends keyof Org>(k: K, v: Org[K]) => setOrg((o) => ({ ...o, [k]: v }));
@@ -42,11 +44,11 @@ export default function OrgForm({
       <div className="space-y-6">
         <Section title="Your group">
           <Field label="Group name">
-            <Input value={org.name} onChange={(e) => set("name", e.target.value)} />
+            <Input value={org.name} placeholder="Sunrise Cultural Association" onChange={(e) => set("name", e.target.value)} />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Term">
-              <Input value={org.term} onChange={(e) => set("term", e.target.value)} />
+              <Input value={org.term} placeholder="Fall 2026" onChange={(e) => set("term", e.target.value)} />
             </Field>
             <Field label="What do you call your people?">
               <Select value={org.memberLabel} onChange={(e) => set("memberLabel", e.target.value as MemberLabel)}>
@@ -103,24 +105,30 @@ export default function OrgForm({
 
         <Section title="Money basics">
           <div className="grid gap-4 sm:grid-cols-3">
-            <Field label="Venmo handle">
-              <Input value={org.venmoHandle} onChange={(e) => set("venmoHandle", e.target.value.replace(/^@/, ""))} />
+            <Field label="Group Venmo" hint="where payments go">
+              <Input
+                value={org.venmoHandle}
+                placeholder="@your-group"
+                onChange={(e) => set("venmoHandle", normHandle(e.target.value))}
+              />
             </Field>
             <Field label="Dues per term">
               <Input
                 type="number"
                 min={0}
                 className="num"
-                value={org.duesAmount}
-                onChange={(e) => set("duesAmount", Number(e.target.value))}
+                placeholder="0.00"
+                value={org.duesAmount || ""}
+                onChange={(e) => set("duesAmount", Number(e.target.value) || 0)}
               />
             </Field>
             <Field label="Starting balance">
               <Input
                 type="number"
                 className="num"
-                value={org.openingBalance}
-                onChange={(e) => set("openingBalance", Number(e.target.value))}
+                placeholder="0.00"
+                value={org.openingBalance || ""}
+                onChange={(e) => set("openingBalance", Number(e.target.value) || 0)}
               />
             </Field>
           </div>
@@ -152,6 +160,7 @@ export default function OrgForm({
           </div>
         </Section>
 
+        {error && <Notice tone="red">{error}</Notice>}
         <Button onClick={() => onSubmit(org)} className="w-full sm:w-auto" style={preview}>
           {submitLabel}
         </Button>
@@ -167,7 +176,7 @@ export default function OrgForm({
               <OrgMark name={org.name} logo={org.logo} size={36} />
               <div className="text-sm font-semibold">{org.name || "Your group"}</div>
             </div>
-            <div className="mt-5 border-t border-rule pt-3 text-sm text-muted">{org.term} dues</div>
+            <div className="mt-5 border-t border-rule pt-3 text-sm text-muted">{org.term || "Term"} dues</div>
             <div className="num text-4xl font-medium tracking-tight">{money(org.duesAmount)}</div>
             <div className="mt-5 rounded-[3px] bg-brand py-2.5 text-center text-sm font-medium text-on-brand">
               Pay with Venmo

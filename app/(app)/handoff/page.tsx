@@ -10,7 +10,8 @@ export default function Handoff() {
   const { state, me, update, log } = useStore();
   const current = treasurer(state);
   const candidates = state.members.filter((m) => m.role !== "treasurer");
-  const [next, setNext] = useState(candidates[0]?.id ?? "");
+  const [pick, setNext] = useState("");
+  const next = candidates.some((m) => m.id === pick) ? pick : (candidates[0]?.id ?? "");
   const [confirm, setConfirm] = useState(false);
   const [done, setDone] = useState<{ name: string; hasLogin: boolean } | null>(null);
   const o = owed(state);
@@ -100,7 +101,9 @@ export default function Handoff() {
             <Caption>Current treasurer</Caption>
             <div className="mt-1 font-medium">{current?.name ?? "None"}</div>
           </div>
-          {canHandOff ? (
+          {canHandOff && candidates.length === 0 ? (
+            <p className="text-sm text-muted">Nobody else has joined yet. Once someone signs up, you can pass the books to them.</p>
+          ) : canHandOff ? (
             <>
               <label className="block text-[13px] font-medium">
                 Pass the books to

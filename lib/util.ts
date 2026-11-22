@@ -43,6 +43,9 @@ export const time = (iso?: string) =>
 // "No. 0231", the way entries are numbered in an account book.
 export const entryNo = (n: number) => `No. ${String(n).padStart(4, "0")}`;
 
+// "@Maya-Chen " → "Maya-Chen"
+export const normHandle = (h: string) => h.trim().replace(/^@+/, "").replace(/\s+/g, "");
+
 export const initials = (name: string) =>
   name
     .split(/\s+/)

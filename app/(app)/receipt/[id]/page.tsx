@@ -28,6 +28,7 @@ export default function ReceiptPage() {
             item: tagName(state, p.tag),
             amount: p.amount,
             payer: memberName(state, p.memberId),
+            from: p.fromHandle,
             no: p.no,
             id: p.id,
             at: p.at,

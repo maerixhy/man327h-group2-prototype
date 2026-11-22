@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useStore } from "@/lib/store";
+import { homePath } from "@/lib/selectors";
 import { Button, ButtonLink, Stamp, ThemeSwitch } from "@/components/ui";
 import Receipt from "@/components/Receipt";
 
@@ -22,6 +24,13 @@ export default function Landing() {
   const router = useRouter();
   const existing = ready && state.onboarded;
 
+  // Signed-in people go straight to their own dashboard.
+  useEffect(() => {
+    if (existing && me) router.replace(homePath(me));
+  }, [existing, me, router]);
+
+  if (existing && me) return null;
+
   return (
     <div className="min-h-dvh overflow-x-hidden">
       <header className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-5">
@@ -33,8 +42,8 @@ export default function Landing() {
         <div className="flex items-center gap-4">
           <ThemeSwitch className="hidden sm:inline-flex" />
           {existing && (
-            <Link href={me ? "/dashboard" : "/login"} className="text-sm font-medium text-ink hover:underline">
-              {me ? "Open workspace" : "Sign in"}
+            <Link href="/login" className="text-sm font-medium text-ink hover:underline">
+              Sign in
             </Link>
           )}
         </div>
@@ -55,9 +64,12 @@ export default function Landing() {
           <div className="mt-8 flex flex-wrap gap-3">
             {existing ? (
               <>
-                <ButtonLink href={me ? "/dashboard" : "/login"}>{me ? "Open workspace" : "Sign in"}</ButtonLink>
+                <ButtonLink href="/login">Sign in</ButtonLink>
+                <ButtonLink href="/join" variant="secondary">
+                  Join {state.org.name}
+                </ButtonLink>
                 <Button
-                  variant="secondary"
+                  variant="ghost"
                   onClick={() => {
                     if (!window.confirm(`Start a new workspace? ${state.org.name} will be deleted from this browser.`))
                       return;

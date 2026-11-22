@@ -16,18 +16,24 @@ Prototype for MAN 327H, Team 2.
 | Dues / Events | `/dues`, `/events`, `/events/[id]` | Officers | Who has paid, one-tap reminders, cash logging, payment links, budget vs. spending |
 | Reimbursements | `/reimbursements` | Officers | Receipt queue, approve with a payback date (stamped with the approver's initials), mark paid |
 | Funding packets | `/packets` | Officers | Funding request or grant report built from receipts, with a pre-submission check and signature line |
-| Members | `/members` | Officers | Everyone's name, role, and login email. Add people, change roles, create or reset logins |
+| Members | `/members` | Officers | Sign-up link, plus everyone's name, role, login email, and Venmo. The treasurer changes roles and resets passwords |
 | Handoff | `/handoff` | Treasurer | Passes the books to the next treasurer |
 | My account | `/me` | Everyone | What you've paid (with receipts) and what's still coming up. Members see only their own records |
 | Profile | `/profile` | Everyone | Photo, name, email, password, light/dark theme |
-| Payment link | `/pay/dues`, `/pay/[eventId]` | Anyone | Pay with Venmo, then get a receipt. Signed-out visitors find their name or use "Not on the list? Add yourself" |
+| Sign up | `/join` | Anyone | Create a member account (name, email, Venmo, password) |
+| Payment link | `/pay/dues`, `/pay/[eventId]` | Signed in | Pay with Venmo as yourself, then get a receipt |
 
 ### Accounts and roles
 
-- Officers (treasurer, president, chairs) see everything. Members only see their own payments and what they still owe: no collection ratios, no other members' names, no reimbursements.
-- The person who sets up the workspace is the treasurer. The starter roster has no passwords yet. From **Members**, an officer clicks **Create login** to get a temporary password for someone.
-- Sign-ins are kept per browser tab, so you can be the treasurer in one tab and a member in another. A new tab starts signed in as whoever signed in last. Use **Sign in → Use a different account** to switch.
-- New people can join themselves from any payment link with **Not on the list? Add yourself**. They show up on the Members page right away.
+- A new workspace starts empty: no people, events, or payments. Whoever sets it up is the treasurer (the owner).
+- Everyone else signs up at **`/join`**. The treasurer copies the link from the Overview or the Members page and shares it. New accounts are members; the treasurer can make someone an officer on the Members page.
+- Each account has a name, email, password, Venmo handle, and photo, all editable in Profile.
+- Signing in (or opening the site while signed in) goes straight to your dashboard: the Overview for officers, your own Dashboard for members.
+- Payment links require signing in, so every payment is recorded to the payer's account and Venmo handle. Nobody searches for a name.
+- Officers see everything. Members only see their own payments and what they still owe.
+- Only the treasurer changes roles, resets passwords, or removes people. Other officers can see the member list.
+- Approved reimbursements have a "Pay on Venmo" button that opens Venmo to the officer's handle with the amount filled in.
+- Sign-ins are kept per browser tab, so you can be the treasurer in one tab and a member in another. Use **Sign in → Use a different account** to switch.
 
 ### Notes
 
@@ -80,11 +86,11 @@ app/
   pay/[id]/              Public payment link (no login)
   (app)/                 Everything inside the sidebar shell
     dashboard/ ledger/ dues/ events/ reimbursements/ packets/ members/ handoff/ settings/ me/ profile/ receipt/
-  login/                 Sign in
+  login/ join/           Sign in and sign up
 components/              Shared UI (shell, org form, collection panel, reimbursement pieces)
 lib/
   types.ts               Data model
-  seed.ts                Starter org, roster, events, payments, receipts
+  seed.ts                Empty starting workspace
   store.tsx              Browser storage and sign-in session (swap for a database later)
   auth.ts                Password hashing and temporary passwords
   theme.ts               Light/dark theme

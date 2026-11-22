@@ -4,12 +4,17 @@ import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { roleLabel } from "@/lib/selectors";
 import { hashPassword, normEmail, validEmail } from "@/lib/auth";
-import { fileToDataUrl, longDate } from "@/lib/util";
+import { fileToDataUrl, longDate, normHandle } from "@/lib/util";
 import { Avatar, Button, Card, Field, Input, Notice, PageHeader, ThemeSwitch } from "@/components/ui";
 
 export default function Profile() {
   const { state, me, update } = useStore();
-  const [form, setForm] = useState({ name: me?.name ?? "", email: me?.email ?? "", avatar: me?.avatar ?? null });
+  const [form, setForm] = useState({
+    name: me?.name ?? "",
+    email: me?.email ?? "",
+    venmo: me?.venmo ?? "",
+    avatar: me?.avatar ?? null,
+  });
   const [pw, setPw] = useState({ current: "", next: "", confirm: "" });
   const [msg, setMsg] = useState<{ tone: "brand" | "red"; text: string; where: "profile" | "password" } | null>(null);
 
@@ -23,7 +28,7 @@ export default function Profile() {
       return setMsg({ tone: "red", text: "Someone else already uses that email.", where: "profile" });
     update((s) => ({
       ...s,
-      members: s.members.map((m) => (m.id === me.id ? { ...m, name: form.name.trim(), email, avatar: form.avatar } : m)),
+      members: s.members.map((m) => (m.id === me.id ? { ...m, name: form.name.trim(), email, venmo: form.venmo, avatar: form.avatar } : m)),
     }));
     setMsg({ tone: "brand", text: "Profile saved.", where: "profile" });
   };
@@ -75,7 +80,7 @@ export default function Profile() {
             </div>
           </div>
 
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
             <Field label="Name">
               <Input value={form.name} autoComplete="name" onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </Field>
@@ -85,6 +90,13 @@ export default function Profile() {
                 autoComplete="email"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
+              />
+            </Field>
+            <Field label="Venmo" hint="payments match to this">
+              <Input
+                placeholder="@your-handle"
+                value={form.venmo}
+                onChange={(e) => setForm({ ...form, venmo: normHandle(e.target.value) })}
               />
             </Field>
           </div>

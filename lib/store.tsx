@@ -16,7 +16,7 @@ import { onColor, uid } from "./util";
 import { hashPassword, normEmail } from "./auth";
 
 // Everything lives in the browser for now. Swap this file for a database (e.g. Supabase) later.
-const KEY = "paper-trail-v2";
+const KEY = "paper-trail-v3";
 // The signed-in account is kept per tab, so two tabs can be two different people.
 const SESSION = "paper-trail-session";
 

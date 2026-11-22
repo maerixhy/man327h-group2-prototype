@@ -157,7 +157,12 @@ export default function Ledger() {
               </span>
             </li>
           ))}
-          {all && (
+          {shown.length === 0 && (
+            <li className="px-4 py-4 text-sm italic text-muted">
+              Nothing in the book yet. Payments through your links and paybacks land here, numbered in order.
+            </li>
+          )}
+          {all && state.org.openingBalance !== 0 && (
             <li className={`grid grid-cols-[1fr_auto] gap-x-3 px-4 py-2 text-sm italic text-muted md:h-9 md:items-center md:py-0 ${cols}`}>
               <span className="hidden md:block" />
               <span className="hidden md:block" />

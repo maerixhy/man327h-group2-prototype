@@ -43,7 +43,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
     { href: "/settings", label: "Settings" },
   ];
   const memberNav: NavItem[] = [
-    { href: "/me", label: "My account" },
+    { href: "/me", label: "Dashboard" },
     { href: "/profile", label: "Profile" },
   ];
   const nav = (officer ? officerNav : memberNav).filter((n) => !n.module || state.org.modules[n.module]);

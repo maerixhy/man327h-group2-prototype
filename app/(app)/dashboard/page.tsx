@@ -17,10 +17,11 @@ export default function Dashboard() {
     .filter((e) => new Date(e.date) > new Date())
     .sort((a, b) => a.date.localeCompare(b.date));
 
+  const duesOn = state.org.modules.dues && state.org.duesAmount > 0;
   const figures = [
     { k: "Owed to officers", v: money(o.approved), s: `${o.approvedCount} approved` },
     { k: "Awaiting approval", v: money(o.submitted), s: `${o.submittedCount} in queue`, href: "/reimbursements" },
-    ...(state.org.modules.dues ? [{ k: "Dues collected", v: `${Math.round(dues.pct * 100)}%`, s: `${dues.unpaid.length} unpaid`, href: "/dues" }] : []),
+    ...(duesOn ? [{ k: "Dues collected", v: `${Math.round(dues.pct * 100)}%`, s: `${dues.unpaid.length} unpaid`, href: "/dues" }] : []),
     { k: cap(L.many), v: String(state.members.length), s: state.org.term, href: "/members" },
   ];
 
@@ -94,7 +95,35 @@ export default function Dashboard() {
 
       <div className="mt-8 grid gap-10 lg:grid-cols-[1.35fr_1fr]">
         <div className="min-w-0 space-y-10">
-          {state.org.modules.dues && (
+          {state.members.length <= 1 && (
+            <section>
+              <SectionTitle>Invite your group</SectionTitle>
+              <p className="mt-3 text-sm text-muted">
+                Nobody else is here yet. Send this sign-up link to your {L.many}; you can make people {L.officer}s from
+                the {cap(L.many)} page.
+              </p>
+              <div className="mt-3">
+                <PaymentLink path="/join" />
+              </div>
+            </section>
+          )}
+
+          {state.org.modules.dues && !duesOn && (
+            <section>
+              <SectionTitle>Dues</SectionTitle>
+              <div className="mt-3">
+                <Empty>
+                  No dues amount set yet.{" "}
+                  <Link href="/settings" className="not-italic text-ink underline-offset-2 hover:underline">
+                    Set one in Settings
+                  </Link>{" "}
+                  and the payment link is ready to share.
+                </Empty>
+              </div>
+            </section>
+          )}
+
+          {duesOn && (
             <section>
               <SectionTitle aside={<Link href="/dues" className="hover:text-ink">Open →</Link>}>
                 {state.org.term} dues
@@ -165,6 +194,9 @@ export default function Dashboard() {
 
         <section className="min-w-0">
           <SectionTitle aside={<Link href="/ledger" className="hover:text-ink">Ledger →</Link>}>Recent entries</SectionTitle>
+          {activity.length === 0 && (
+            <p className="py-4 text-sm italic text-muted">No entries yet. The first payment in becomes No. 0001.</p>
+          )}
           <ul>
             {activity.map((a) => (
               <li key={a.id} className="flex items-baseline gap-3 border-b border-rule py-2 text-sm">
@@ -188,7 +220,11 @@ export default function Dashboard() {
               </li>
             ))}
           </ul>
-          <div className="num mt-2 text-[11px] text-faint">Last entry {activity[0] ? entryNo(Math.max(...activity.map((a) => a.no ?? 0))) : "—"}</div>
+          {activity.some((a) => a.no) && (
+            <div className="num mt-2 text-[11px] text-faint">
+              Last entry {entryNo(Math.max(...activity.map((a) => a.no ?? 0)))}
+            </div>
+          )}
         </section>
       </div>
     </>

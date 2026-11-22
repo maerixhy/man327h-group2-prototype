@@ -24,12 +24,13 @@ export interface Member {
   id: string;
   name: string;
   email: string;
+  venmo: string; // Venmo handle, without the @
   role: Role;
   title?: string;
   avatar: string | null; // data URL
   passwordHash: string | null; // null until they set a password
   joinedAt: string;
-  source: "roster" | "link" | "added";
+  source: "owner" | "signup" | "added";
 }
 
 export interface OrgEvent {
@@ -54,6 +55,7 @@ export interface Payment {
   at: string;
   ref: string; // the tag code carried in the Venmo note
   recordedBy?: string; // member id, for cash an officer logged
+  fromHandle?: string; // payer's Venmo handle at the time they paid
 }
 
 export type ReimbStatus = "submitted" | "approved" | "paid" | "rejected";

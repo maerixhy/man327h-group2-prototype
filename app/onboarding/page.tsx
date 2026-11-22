@@ -2,21 +2,26 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import OrgForm from "@/components/OrgForm";
 import { useStore } from "@/lib/store";
+import type { Member } from "@/lib/types";
 import { hashPassword, normEmail, validEmail } from "@/lib/auth";
-import { Card, Field, Input, Notice } from "@/components/ui";
+import { normHandle, uid } from "@/lib/util";
+import { Card, Field, Input } from "@/components/ui";
 
 export default function Onboarding() {
-  const { state, ready, update, log, signInAs } = useStore();
+  const { state, ready, update, signInAs } = useStore();
   const router = useRouter();
-  const [acct, setAcct] = useState({ name: "", email: "", password: "" });
+  const [acct, setAcct] = useState({ name: "", email: "", venmo: "", password: "" });
   const [error, setError] = useState<string | null>(null);
 
-  if (!ready) return null;
+  // One workspace per browser: if it already exists, send people to sign in instead.
+  useEffect(() => {
+    if (ready && state.onboarded) router.replace("/");
+  }, [ready, state.onboarded, router]);
 
-  const treasurerId = state.members.find((m) => m.role === "treasurer")?.id ?? "m1";
+  if (!ready || state.onboarded) return null;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-12">
@@ -29,8 +34,7 @@ export default function Onboarding() {
 
       <Card className="mt-6 p-5 md:p-6 lg:mr-[364px]">
         <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em]">Your account</h2>
-        <p className="mt-1 text-sm text-muted">You&apos;ll be the treasurer. You can hand the books off later.</p>
-        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Field label="Your name">
             <Input value={acct.name} autoComplete="name" onChange={(e) => setAcct({ ...acct, name: e.target.value })} />
           </Field>
@@ -42,6 +46,13 @@ export default function Onboarding() {
               onChange={(e) => setAcct({ ...acct, email: e.target.value })}
             />
           </Field>
+          <Field label="Your Venmo" hint="optional">
+            <Input
+              placeholder="@your-handle"
+              value={acct.venmo}
+              onChange={(e) => setAcct({ ...acct, venmo: normHandle(e.target.value) })}
+            />
+          </Field>
           <Field label="Password" hint="8+ characters">
             <Input
               type="password"
@@ -51,37 +62,41 @@ export default function Onboarding() {
             />
           </Field>
         </div>
-        {error && (
-          <div className="mt-4">
-            <Notice tone="red">{error}</Notice>
-          </div>
-        )}
       </Card>
 
       <div className="mt-6">
         <OrgForm
           initial={state.org}
           submitLabel="Create workspace"
+          error={error}
           onSubmit={async (org) => {
             const email = normEmail(acct.email);
             if (!acct.name.trim()) return setError("Add your name.");
             if (!validEmail(email)) return setError("That email doesn't look right.");
             if (acct.password.length < 8) return setError("Use a password with at least 8 characters.");
-            if (state.members.some((m) => m.id !== treasurerId && normEmail(m.email) === email))
-              return setError("Someone on the roster already uses that email.");
-            const passwordHash = await hashPassword(acct.password);
+            if (!org.name.trim()) return setError("Give your group a name.");
+            if (!org.venmoHandle) return setError("Add the group's Venmo handle so payment links know where to send money.");
+            const now = new Date().toISOString();
+            const owner: Member = {
+              id: uid(),
+              name: acct.name.trim(),
+              email,
+              venmo: acct.venmo,
+              role: "treasurer",
+              title: "Treasurer",
+              avatar: null,
+              passwordHash: await hashPassword(acct.password),
+              joinedAt: now,
+              source: "owner",
+            };
             update((s) => ({
               ...s,
-              org,
+              org: { ...org, name: org.name.trim(), term: org.term.trim() || "This term" },
               onboarded: true,
-              members: s.members.map((m) =>
-                m.id === treasurerId
-                  ? { ...m, name: acct.name.trim(), email, passwordHash, joinedAt: new Date().toISOString() }
-                  : m
-              ),
+              members: [owner],
+              log: [{ id: uid(), at: now, text: `Workspace created for ${org.name.trim()}`, by: owner.id }],
             }));
-            signInAs(treasurerId);
-            log(`Workspace created for ${org.name}`);
+            signInAs(owner.id);
             router.push("/dashboard");
           }}
         />
