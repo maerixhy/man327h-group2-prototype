@@ -5,6 +5,7 @@ import type { MemberLabel, ModuleKey, Org, PacketTemplate } from "@/lib/types";
 import { fileToDataUrl, money, normHandle, onColor } from "@/lib/util";
 import { Button, Card, Field, Input, Notice, OrgMark, Select } from "./ui";
 import { isV1Module } from "@/lib/features";
+import FeeNote from "./FeeNote";
 
 const SWATCHES = ["#1f6f5c", "#bf5700", "#6d3fc0", "#1d4ed8", "#a3123a", "#1b1a17", "#8a5a00", "#0e7490"];
 
@@ -45,7 +46,11 @@ export default function OrgForm({
       <div className="space-y-6">
         <Section title="Your group">
           <Field label="Group name">
-            <Input value={org.name} placeholder="Sunrise Cultural Association" onChange={(e) => set("name", e.target.value)} />
+            <Input
+              value={org.name}
+              placeholder="Sunrise Cultural Association"
+              onChange={(e) => set("name", e.target.value)}
+            />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Term">
@@ -122,6 +127,7 @@ export default function OrgForm({
                 value={org.duesAmount || ""}
                 onChange={(e) => set("duesAmount", Number(e.target.value) || 0)}
               />
+              <FeeNote price={org.duesAmount} profile={org.venmoProfile} />
             </Field>
             <Field label="Starting balance">
               <Input
@@ -133,8 +139,53 @@ export default function OrgForm({
               />
             </Field>
           </div>
+          <fieldset>
+            <legend className="text-[13px] font-medium">
+              Is {org.venmoHandle ? <span className="num">@{org.venmoHandle}</span> : "the group Venmo"} a business or
+              personal profile?
+            </legend>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              {(
+                [
+                  [
+                    "business",
+                    "Business profile (recommended)",
+                    "Keeps the group within Venmo's terms. Venmo keeps 1.9% + $0.10 per payment received.",
+                  ],
+                  [
+                    "personal",
+                    "Personal profile",
+                    "No fees, but Venmo's terms don't allow collecting money for a group on a personal account.",
+                  ],
+                ] as const
+              ).map(([value, title, desc]) => (
+                <label
+                  key={value}
+                  className={`flex cursor-pointer gap-2.5 rounded-[3px] border p-3 ${
+                    org.venmoProfile === value ? "border-ink" : "border-rule"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="venmoProfile"
+                    checked={org.venmoProfile === value}
+                    onChange={() => set("venmoProfile", value)}
+                    className="mt-0.5 h-4 w-4 accent-[var(--brand)]"
+                    style={preview}
+                  />
+                  <span>
+                    <span className="block text-sm font-medium">{title}</span>
+                    <span className="block text-xs text-muted">{desc}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
           <Field label="Funding report format">
-            <Select value={org.packetTemplate} onChange={(e) => set("packetTemplate", e.target.value as PacketTemplate)}>
+            <Select
+              value={org.packetTemplate}
+              onChange={(e) => set("packetTemplate", e.target.value as PacketTemplate)}
+            >
               <option value="university">University student org funding request</option>
               <option value="grant">Funder or grant expense report (nonprofits)</option>
             </Select>

@@ -7,6 +7,7 @@ import { collection, eventSpend } from "@/lib/selectors";
 import { money, relDays, shortDate, uid } from "@/lib/util";
 import { Button, Card, Empty, Field, Input, PageHeader } from "@/components/ui";
 import { SHOW_BUDGETS } from "@/lib/features";
+import FeeNote from "@/components/FeeNote";
 
 export default function Events() {
   const { state, update, log } = useStore();
@@ -58,17 +59,18 @@ export default function Events() {
                 value={form.price}
                 onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
               />
+              <FeeNote price={form.price} profile={state.org.venmoProfile} unit="ticket" />
             </Field>
             {SHOW_BUDGETS && (
-            <Field label="Budget">
-              <Input
-                type="number"
-                min={0}
-                className="num"
-                value={form.budget}
-                onChange={(e) => setForm({ ...form, budget: Number(e.target.value) })}
-              />
-            </Field>
+              <Field label="Budget">
+                <Input
+                  type="number"
+                  min={0}
+                  className="num"
+                  value={form.budget}
+                  onChange={(e) => setForm({ ...form, budget: Number(e.target.value) })}
+                />
+              </Field>
             )}
           </div>
           <div className="sm:col-span-2">
@@ -123,10 +125,10 @@ export default function Events() {
                     </td>
                     <td className="num py-3 text-right text-[13px]">{c.unpaid.length}</td>
                     {SHOW_BUDGETS && (
-                    <td className="num py-3 text-right text-[13px]">
-                      <span className={sp.committed > e.budget ? "text-red-ink" : ""}>{money(sp.committed)}</span>
-                      <span className="text-muted"> / {money(e.budget)}</span>
-                    </td>
+                      <td className="num py-3 text-right text-[13px]">
+                        <span className={sp.committed > e.budget ? "text-red-ink" : ""}>{money(sp.committed)}</span>
+                        <span className="text-muted"> / {money(e.budget)}</span>
+                      </td>
                     )}
                   </tr>
                 );
