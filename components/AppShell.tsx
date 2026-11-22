@@ -6,6 +6,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { useStore } from "@/lib/store";
 import { isOfficer, roleLabel } from "@/lib/selectors";
 import type { ModuleKey } from "@/lib/types";
+import { isV1Module, V2_ROUTES } from "@/lib/features";
 import { cap, label } from "@/lib/util";
 import { Avatar, OrgMark, ThemeSwitch } from "./ui";
 
@@ -19,14 +20,15 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const officer = isOfficer(me);
-  const allowed = officer || OPEN_TO_ALL.some((p) => pathname === p || pathname.startsWith(p + "/"));
+  const v2Page = V2_ROUTES.some((p) => pathname === p || pathname.startsWith(p + "/"));
+  const allowed = !v2Page && (officer || OPEN_TO_ALL.some((p) => pathname === p || pathname.startsWith(p + "/")));
 
   useEffect(() => {
     if (!ready) return;
     if (!state.onboarded) router.replace("/");
     else if (!me) router.replace(`/login?next=${encodeURIComponent(pathname)}`);
-    else if (!allowed) router.replace("/me");
-  }, [ready, state.onboarded, me, allowed, pathname, router]);
+    else if (!allowed) router.replace(officer && v2Page ? "/dashboard" : "/me");
+  }, [ready, state.onboarded, me, allowed, officer, v2Page, pathname, router]);
 
   if (!ready || !state.onboarded || !me || !allowed) return null;
 
@@ -46,7 +48,10 @@ export default function AppShell({ children }: { children: ReactNode }) {
     { href: "/me", label: "Dashboard" },
     { href: "/profile", label: "Profile" },
   ];
-  const nav = (officer ? officerNav : memberNav).filter((n) => !n.module || state.org.modules[n.module]);
+  // v2 features stay in the list but never show in v1.
+  const nav = (officer ? officerNav : memberNav).filter(
+    (n) => !n.module || (isV1Module(n.module) && state.org.modules[n.module])
+  );
 
   return (
     <div className="min-h-dvh md:flex">

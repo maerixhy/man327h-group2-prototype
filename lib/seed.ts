@@ -3,7 +3,7 @@ import type { State } from "./types";
 // A brand-new workspace: no people, events, or money yet. The treasurer fills in the rest.
 export function seedState(): State {
   return {
-    version: 3,
+    version: 4,
     onboarded: false,
     org: {
       name: "",
@@ -15,7 +15,11 @@ export function seedState(): State {
       term: "",
       openingBalance: 0,
       packetTemplate: "university",
-      modules: { dues: true, events: true, reimbursements: true, packets: true, handoff: true },
+      // Reimbursements and handoff are v2 features, kept off for now.
+      modules: { dues: true, events: true, reimbursements: false, packets: true, handoff: false },
+      venmoProfile: "business",
+      plan: "free",
+      aliases: [],
     },
     members: [],
     events: [],
@@ -24,5 +28,6 @@ export function seedState(): State {
     reminders: [],
     log: [],
     seq: 1,
+    review: [],
   };
 }

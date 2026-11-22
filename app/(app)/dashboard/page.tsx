@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { useStore } from "@/lib/store";
-import { balance, collection, eventSpend, memberName, owed } from "@/lib/selectors";
+import { balance, collection, eventSpend, memberName } from "@/lib/selectors";
+import { SHOW_BUDGETS } from "@/lib/features";
 import { cap, entryNo, initials, label, longDate, money, relDays, shortDate, time } from "@/lib/util";
 import { Caption, Empty, Progress, SectionTitle } from "@/components/ui";
 import PaymentLink from "@/components/PaymentLink";
 
 export default function Dashboard() {
   const { state, me } = useStore();
-  const o = owed(state);
   const dues = collection(state, { kind: "dues" });
   const L = label(state.org.memberLabel);
   const now = new Date().toISOString();
@@ -19,8 +19,18 @@ export default function Dashboard() {
 
   const duesOn = state.org.modules.dues && state.org.duesAmount > 0;
   const figures = [
-    { k: "Owed to officers", v: money(o.approved), s: `${o.approvedCount} approved` },
-    { k: "Awaiting approval", v: money(o.submitted), s: `${o.submittedCount} in queue`, href: "/reimbursements" },
+    {
+      k: "Collected",
+      v: money(state.payments.reduce((a, p) => a + p.amount, 0)),
+      s: `${state.payments.length} payments`,
+      href: "/ledger",
+    },
+    {
+      k: "Needs review",
+      v: String(state.review.filter((r) => r.state === "open").length),
+      s: "from Venmo statements",
+      href: "/match",
+    },
     ...(duesOn ? [{ k: "Dues collected", v: `${Math.round(dues.pct * 100)}%`, s: `${dues.unpaid.length} unpaid`, href: "/dues" }] : []),
     { k: cap(L.many), v: String(state.members.length), s: state.org.term, href: "/members" },
   ];
@@ -159,7 +169,9 @@ export default function Dashboard() {
                       <th className="py-2 font-medium">Event</th>
                       <th className="py-2 font-medium">Date</th>
                       <th className="py-2 text-right font-medium">Collected</th>
-                      <th className="hidden py-2 text-right font-medium sm:table-cell">Spent / budget</th>
+                      {SHOW_BUDGETS && (
+                        <th className="hidden py-2 text-right font-medium sm:table-cell">Spent / budget</th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -179,9 +191,11 @@ export default function Dashboard() {
                             <div className="font-sans text-xs text-faint">{relDays(e.date)}</div>
                           </td>
                           <td className="num py-2.5 text-right text-[13px]">{Math.round(c.pct * 100)}%</td>
-                          <td className="num hidden py-2.5 text-right text-[13px] sm:table-cell">
-                            {money(sp.committed)} <span className="text-muted">/ {money(e.budget)}</span>
-                          </td>
+                          {SHOW_BUDGETS && (
+                            <td className="num hidden py-2.5 text-right text-[13px] sm:table-cell">
+                              {money(sp.committed)} <span className="text-muted">/ {money(e.budget)}</span>
+                            </td>
+                          )}
                         </tr>
                       );
                     })}

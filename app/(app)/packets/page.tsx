@@ -6,6 +6,8 @@ import { collection, memberName, treasurer } from "@/lib/selectors";
 import type { PacketTemplate } from "@/lib/types";
 import { csvCell, downloadFile, entryNo, longDate, money, shortDate } from "@/lib/util";
 import { Button, Card, Empty, OrgMark, PageHeader, Select, Stamp } from "@/components/ui";
+import { ExpenseForm } from "@/components/Expenses";
+import { SHOW_BUDGETS } from "@/lib/features";
 
 // Builds a funding request (or a grant expense report) from the receipts already in Paper Trail,
 // and flags the problems that usually get requests denied before anyone submits.
@@ -45,14 +47,9 @@ export default function Packets() {
       text: "Every expense has a receipt",
       fix: lines.filter((r) => !r.receipt).map((r) => `${r.vendor} (${money(r.amount)})`),
     },
-    {
-      ok: lines.every((r) => r.status !== "submitted"),
-      text: "Every expense is approved by the board",
-      fix: lines.filter((r) => r.status === "submitted").map((r) => `${r.vendor} (${money(r.amount)})`),
-    },
     { ok: lines.every((r) => r.vendor && r.description), text: "Every line names a vendor and purpose" },
     { ok: ev.purpose.trim().length > 15, text: "Event purpose is described" },
-    { ok: total <= ev.budget, text: `Spending is within the ${money(ev.budget)} budget` },
+    ...(SHOW_BUDGETS ? [{ ok: total <= ev.budget, text: `Spending is within the ${money(ev.budget)} budget` }] : []),
   ];
   const ready = checks.every((c) => c.ok);
 
@@ -140,6 +137,9 @@ export default function Packets() {
             </ul>
           </Card>
         </div>
+        <div className="mt-4">
+          <ExpenseForm key={ev.id} eventId={ev.id} />
+        </div>
         <div className="mt-8 mb-3 text-[11px] font-medium uppercase tracking-[0.1em] text-muted">Preview</div>
       </div>
 
@@ -161,14 +161,14 @@ export default function Packets() {
                 ["Location", ev.location],
                 ["Treasurer", t?.name ?? ""],
                 ["Paid attendees", `${income.paidCount} of ${state.members.length}`],
-                ["Approved budget", money(ev.budget)],
+                ...(SHOW_BUDGETS ? [["Approved budget", money(ev.budget)]] : []),
               ]
             : [
                 ["Program", ev.name],
                 ["Reporting period", state.org.term],
                 ["Prepared by", t?.name ?? ""],
                 ["Date of activity", longDate(ev.date)],
-                ["Budgeted", money(ev.budget)],
+                ...(SHOW_BUDGETS ? [["Budgeted", money(ev.budget)]] : []),
                 ["Actual", money(total)],
               ]
           ).map(([k, v]) => (
@@ -191,7 +191,7 @@ export default function Packets() {
               <th className="py-2 pr-2">No.</th>
               <th className="py-2 pr-2">Vendor</th>
               <th className="py-2 pr-2">Description</th>
-              <th className="py-2 pr-2">Paid by</th>
+              <th className="py-2 pr-2">Added by</th>
               <th className="py-2 pr-2">Receipt</th>
               <th className="py-2 text-right">Amount</th>
             </tr>

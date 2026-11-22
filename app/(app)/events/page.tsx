@@ -6,11 +6,12 @@ import { useStore } from "@/lib/store";
 import { collection, eventSpend } from "@/lib/selectors";
 import { money, relDays, shortDate, uid } from "@/lib/util";
 import { Button, Card, Empty, Field, Input, PageHeader } from "@/components/ui";
+import { SHOW_BUDGETS } from "@/lib/features";
 
 export default function Events() {
   const { state, update, log } = useStore();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", date: "", location: "", price: 10, budget: 200, purpose: "" });
+  const [form, setForm] = useState({ name: "", date: "", location: "", price: 10, budget: 0, purpose: "" });
 
   const events = [...state.events].sort((a, b) => b.date.localeCompare(a.date));
 
@@ -22,7 +23,7 @@ export default function Events() {
       events: [...s.events, { id, ...form, date: new Date(form.date + "T19:00").toISOString() }],
     }));
     log(`Created event ${form.name}`);
-    setForm({ name: "", date: "", location: "", price: 10, budget: 200, purpose: "" });
+    setForm({ name: "", date: "", location: "", price: 10, budget: 0, purpose: "" });
     setOpen(false);
   };
 
@@ -58,6 +59,7 @@ export default function Events() {
                 onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
               />
             </Field>
+            {SHOW_BUDGETS && (
             <Field label="Budget">
               <Input
                 type="number"
@@ -67,6 +69,7 @@ export default function Events() {
                 onChange={(e) => setForm({ ...form, budget: Number(e.target.value) })}
               />
             </Field>
+            )}
           </div>
           <div className="sm:col-span-2">
             <Field label="Purpose" hint="used in funding packets">
@@ -82,7 +85,7 @@ export default function Events() {
       )}
 
       {events.length === 0 ? (
-        <Empty>No events yet. Add one and it gets its own payment link and budget line.</Empty>
+        <Empty>No events yet. Add one and it gets its own payment link.</Empty>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] text-sm">
@@ -93,7 +96,7 @@ export default function Events() {
                 <th className="py-2 text-right font-medium">Price</th>
                 <th className="py-2 text-right font-medium">Collected</th>
                 <th className="py-2 text-right font-medium">Unpaid</th>
-                <th className="py-2 text-right font-medium">Spent / budget</th>
+                {SHOW_BUDGETS && <th className="py-2 text-right font-medium">Spent / budget</th>}
               </tr>
             </thead>
             <tbody>
@@ -119,10 +122,12 @@ export default function Events() {
                       <div className="text-[11px] text-faint">{Math.round(c.pct * 100)}%</div>
                     </td>
                     <td className="num py-3 text-right text-[13px]">{c.unpaid.length}</td>
+                    {SHOW_BUDGETS && (
                     <td className="num py-3 text-right text-[13px]">
                       <span className={sp.committed > e.budget ? "text-red-ink" : ""}>{money(sp.committed)}</span>
                       <span className="text-muted"> / {money(e.budget)}</span>
                     </td>
+                    )}
                   </tr>
                 );
               })}

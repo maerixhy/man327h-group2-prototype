@@ -7,6 +7,8 @@ import { eventSpend, memberName } from "@/lib/selectors";
 import { longDate, money } from "@/lib/util";
 import { Empty, PageHeader, Progress, SectionTitle, StatusStamp } from "@/components/ui";
 import CollectionPanel from "@/components/CollectionPanel";
+import { ExpenseForm, ExpenseList } from "@/components/Expenses";
+import { SHOW_BUDGETS } from "@/lib/features";
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -30,7 +32,7 @@ export default function EventDetail() {
           ["Date", longDate(ev.date)],
           ["Location", ev.location || "—"],
           ["Price", money(ev.price)],
-          ["Budget", money(ev.budget)],
+          ...(SHOW_BUDGETS ? [["Budget", money(ev.budget)]] : []),
         ].map(([k, v]) => (
           <div key={k}>
             <dt className="text-[11px] uppercase tracking-[0.1em] text-muted">{k}</dt>
@@ -41,6 +43,16 @@ export default function EventDetail() {
 
       <CollectionPanel tag={{ kind: "event", eventId: ev.id }} path={`/pay/${ev.id}`} />
 
+      <section className="mt-10">
+        <SectionTitle>Expenses</SectionTitle>
+        <ExpenseList eventId={ev.id} />
+        <div className="mt-4">
+          <ExpenseForm eventId={ev.id} />
+        </div>
+      </section>
+
+      {/* Budget view, hidden until v2 */}
+      {SHOW_BUDGETS && (
       <section className="mt-10">
         <SectionTitle
           aside={
@@ -71,6 +83,7 @@ export default function EventDetail() {
           )}
         </ul>
       </section>
+      )}
     </>
   );
 }

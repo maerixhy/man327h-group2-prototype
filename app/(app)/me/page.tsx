@@ -13,7 +13,7 @@ export default function Me() {
   const totals = memberTotals(state, me.id);
   const due = memberObligations(state, me.id).filter((o) => !o.payment && !o.past);
   const paid = [...totals.payments].sort((a, b) => b.at.localeCompare(a.at));
-  const mine = isOfficer(me)
+  const mine = isOfficer(me) && state.org.modules.reimbursements
     ? state.reimbursements.filter((r) => r.submitterId === me.id).sort((a, b) => b.submittedAt.localeCompare(a.submittedAt))
     : [];
 

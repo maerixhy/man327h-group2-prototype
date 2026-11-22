@@ -7,8 +7,9 @@ import type { PaymentTag } from "@/lib/types";
 import { label, money, relDays, sameTag, shortDate, tagCode, uid } from "@/lib/util";
 import { Button, Notice, Progress, SectionTitle } from "./ui";
 import PaymentLink from "./PaymentLink";
+import { SHOW_REMINDERS } from "@/lib/features";
 
-// Shared by dues and events: who paid, who didn't, and one-tap reminders so nobody chases people by text.
+// Shared by dues and events: who paid and who didn't. One-tap reminders are hidden until v2.
 export default function CollectionPanel({ tag, path }: { tag: PaymentTag; path: string }) {
   const { state, me, update, log } = useStore();
   const [origin, setOrigin] = useState("");
@@ -62,9 +63,11 @@ export default function CollectionPanel({ tag, path }: { tag: PaymentTag; path: 
               {money(price)} each · {Math.round(c.pct * 100)}% · {c.paidCount} of {state.members.length} paid · {c.unpaid.length} unpaid
             </div>
           </div>
-          <Button onClick={() => remind(c.unpaid.map((m) => m.id))} disabled={c.unpaid.length === 0}>
-            Remind all {c.unpaid.length} unpaid
-          </Button>
+          {SHOW_REMINDERS && (
+            <Button onClick={() => remind(c.unpaid.map((m) => m.id))} disabled={c.unpaid.length === 0}>
+              Remind all {c.unpaid.length} unpaid
+            </Button>
+          )}
         </div>
         <Progress value={c.pct} className="mt-4" />
         <div className="mt-5">
@@ -92,15 +95,17 @@ export default function CollectionPanel({ tag, path }: { tag: PaymentTag; path: 
                 <li key={m.id} className="flex items-center justify-between gap-2 border-b border-rule py-1.5">
                   <div className="min-w-0">
                     <div className="truncate text-sm">{m.name}</div>
-                    {r && <div className="text-[11px] text-muted">Reminded {relDays(r.at)}</div>}
+                    {SHOW_REMINDERS && r && <div className="text-[11px] text-muted">Reminded {relDays(r.at)}</div>}
                   </div>
                   <div className="flex shrink-0 gap-1">
                     <Button size="sm" variant="ghost" onClick={() => markCash(m.id)}>
                       Got cash
                     </Button>
-                    <Button size="sm" variant="secondary" onClick={() => remind([m.id])}>
-                      Remind
-                    </Button>
+                    {SHOW_REMINDERS && (
+                      <Button size="sm" variant="secondary" onClick={() => remind([m.id])}>
+                        Remind
+                      </Button>
+                    )}
                   </div>
                 </li>
               );

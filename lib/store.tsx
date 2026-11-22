@@ -12,6 +12,7 @@ import {
 } from "react";
 import type { Member, State } from "./types";
 import { seedState } from "./seed";
+import { migrate } from "./migrate";
 import { onColor, uid } from "./util";
 import { hashPassword, normEmail } from "./auth";
 
@@ -64,7 +65,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) setState(JSON.parse(raw));
+      if (raw) setState(migrate(JSON.parse(raw)));
     } catch {}
     setSessionId(readSession());
     setReady(true);
@@ -73,7 +74,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const onStorage = (e: StorageEvent) => {
       if (e.key === KEY && e.newValue) {
         try {
-          setState(JSON.parse(e.newValue));
+          setState(migrate(JSON.parse(e.newValue)));
         } catch {}
       }
     };

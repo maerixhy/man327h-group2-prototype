@@ -4,14 +4,15 @@ import { useState, type CSSProperties } from "react";
 import type { MemberLabel, ModuleKey, Org, PacketTemplate } from "@/lib/types";
 import { fileToDataUrl, money, normHandle, onColor } from "@/lib/util";
 import { Button, Card, Field, Input, Notice, OrgMark, Select } from "./ui";
+import { isV1Module } from "@/lib/features";
 
 const SWATCHES = ["#1f6f5c", "#bf5700", "#6d3fc0", "#1d4ed8", "#a3123a", "#1b1a17", "#8a5a00", "#0e7490"];
 
 const MODULES: { key: ModuleKey; name: string; desc: string }[] = [
   { key: "dues", name: "Dues", desc: "Collect term dues with a tagged payment link." },
-  { key: "events", name: "Event payments", desc: "Per-event links, budgets, and one-tap reminders." },
+  { key: "events", name: "Event payments", desc: "A payment link per event, with a code in every Venmo note." },
   { key: "reimbursements", name: "Reimbursements", desc: "Officers submit receipts and see when they're paid back." },
-  { key: "packets", name: "Funding packets", desc: "Build funding requests or grant reports from your receipts." },
+  { key: "packets", name: "Funding packets", desc: "Build funding requests from your receipts. Pro plan." },
   { key: "handoff", name: "Handoff", desc: "Pass the full record to the next treasurer in one click." },
 ];
 
@@ -142,7 +143,7 @@ export default function OrgForm({
 
         <Section title="Tabs to show">
           <div className="-my-2 divide-y divide-rule">
-            {MODULES.map((m) => (
+            {MODULES.filter((m) => isV1Module(m.key)).map((m) => (
               <label key={m.key} className="flex cursor-pointer items-start gap-3 py-2.5">
                 <input
                   type="checkbox"
