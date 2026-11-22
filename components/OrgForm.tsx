@@ -58,9 +58,9 @@ export default function OrgForm({
             </Field>
             <Field label="What do you call your people?">
               <Select value={org.memberLabel} onChange={(e) => set("memberLabel", e.target.value as MemberLabel)}>
-                <option value="members">Members and officers (clubs)</option>
-                <option value="families">Families and board (PTAs)</option>
-                <option value="players">Players and team managers</option>
+                <option value="members">Members and officers (student orgs)</option>
+                <option value="players">Players and team managers (youth sports)</option>
+                <option value="families">Families and board</option>
                 <option value="volunteers">Volunteers and coordinators</option>
               </Select>
             </Field>
@@ -187,7 +187,7 @@ export default function OrgForm({
               onChange={(e) => set("packetTemplate", e.target.value as PacketTemplate)}
             >
               <option value="university">University student org funding request</option>
-              <option value="grant">Funder or grant expense report (nonprofits)</option>
+              <option value="grant">Grant or sponsor expense report</option>
             </Select>
           </Field>
         </Section>

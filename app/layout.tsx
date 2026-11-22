@@ -11,7 +11,7 @@ const signature = Mrs_Saint_Delafield({ subsets: ["latin"], weight: "400", varia
 
 export const metadata: Metadata = {
   title: "Paper Trail",
-  description: "A shared money ledger for student orgs, PTAs, teams, and small nonprofits.",
+  description: "Event payment links and Venmo statement matching for student orgs and youth sports teams.",
   manifest: "/manifest.webmanifest",
   icons: { icon: "/icon.svg", apple: "/icon.svg" },
   appleWebApp: { capable: true, title: "Paper Trail", statusBarStyle: "default" },

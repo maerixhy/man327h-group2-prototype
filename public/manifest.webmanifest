@@ -1,7 +1,7 @@
 {
   "name": "Paper Trail",
   "short_name": "Paper Trail",
-  "description": "A shared money ledger for volunteer-run groups.",
+  "description": "Event payment links and Venmo statement matching for student orgs and youth sports teams.",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#f7f6f2",

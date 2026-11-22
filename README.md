@@ -1,46 +1,61 @@
 # Paper Trail
 
-A shared money ledger for volunteer-run groups like student orgs, PTAs, youth sports teams, and small nonprofits. It sits on top of the payment apps groups already use, so the treasurer's personal Venmo stops being the group's bank.
+Event payment links and Venmo statement matching for student orgs, and youth sports teams second. Members pay through a link that puts a code in the Venmo note; the treasurer uploads the Venmo statement and Paper Trail matches each payment to the right event and person. That's the ~18 minutes a week of matching by hand that it removes.
 
 Prototype for MAN 327H, Team 2.
 
-## What the prototype shows
+## What testing changed
 
-| Screen | Path | Who | What it does |
-| --- | --- | --- | --- |
-| Landing | `/` | Anyone | Pitch, set up a workspace, or sign in |
-| Onboarding | `/onboarding` | New treasurer | Creates the treasurer's account, then name, logo, brand color, Venmo handle, and which tabs appear |
-| Sign in | `/login` | Anyone | Email and password |
-| Overview | `/dashboard` | Officers | Balance as a statement header, money owed to officers, dues and events, recent entries |
-| Ledger | `/ledger` | Officers | Every numbered entry in and out, with running balance and CSV export |
-| Dues / Events | `/dues`, `/events`, `/events/[id]` | Officers | Who has paid, one-tap reminders, cash logging, payment links, budget vs. spending |
-| Reimbursements | `/reimbursements` | Officers | Receipt queue, approve with a payback date (stamped with the approver's initials), mark paid |
-| Funding packets | `/packets` | Officers | Funding request or grant report built from receipts, with a pre-submission check and signature line |
-| Members | `/members` | Officers | Sign-up link, plus everyone's name, role, login email, and Venmo. The treasurer changes roles and resets passwords |
-| Handoff | `/handoff` | Treasurer | Passes the books to the next treasurer |
-| My account | `/me` | Everyone | What you've paid (with receipts) and what's still coming up. Members see only their own records |
-| Profile | `/profile` | Everyone | Photo, name, email, password, light/dark theme |
-| Sign up | `/join` | Anyone | Create a member account (name, email, Venmo, password) |
-| Payment link | `/pay/dues`, `/pay/[eventId]` | Signed in | Pay with Venmo as yourself, then get a receipt |
+- Payments through our event link matched the right event 89% of the time, from the code in the Venmo note. Direct payments matched only 54%. So v1 centers on the link and on matching the statement.
+- 5 of 10 treasurers would pay for the funding packet generator, so it's the Pro feature. Reimbursements and handoff (2 votes each) and reminders (1) moved to v2.
+- Venmo's terms bar business transactions on personal accounts, so setup recommends a Venmo business profile and shows its fee (1.9% + $0.10 per payment received).
 
-### Accounts and roles
+## v1 features
 
-- A new workspace starts empty: no people, events, or payments. Whoever sets it up is the treasurer (the owner).
-- Everyone else signs up at **`/join`**. The treasurer copies the link from the Overview or the Members page and shares it. New accounts are members; the treasurer can make someone an officer on the Members page.
-- Each account has a name, email, password, Venmo handle, and photo, all editable in Profile.
-- Signing in (or opening the site while signed in) goes straight to your dashboard: the Overview for officers, your own Dashboard for members.
-- Payment links require signing in, so every payment is recorded to the payer's account and Venmo handle. Nobody searches for a name.
-- Officers see everything. Members only see their own payments and what they still owe.
-- Only the treasurer changes roles, resets passwords, or removes people. Other officers can see the member list.
-- Approved reimbursements have a "Pay on Venmo" button that opens Venmo to the officer's handle with the amount filled in.
-- Sign-ins are kept per browser tab, so you can be the treasurer in one tab and a member in another. Use **Sign in → Use a different account** to switch.
+| Feature | Plan | Where |
+| --- | --- | --- |
+| Event payment links | Free | `/events`, `/events/[id]`, `/pay/[id]`, `/dues`, `/pay/dues` |
+| Venmo statement matching | Free | `/match` |
+| Shared balance | Free | `/dashboard` (Overview), `/ledger`, `/me` (My account) |
+| Funding packets | Pro | `/packets` |
 
-### Notes
+**Plans.** Free: payment links, shared balance, ledger, statement matching. Pro ($30/semester or $50/year): funding packets. Anyone can build and preview a packet; printing, PDF, and CSV are Pro. The upgrade dialog's "Hold your spot with a $5 refundable deposit" is simulated: it marks the group as Pro and logs it. **Settings → Plan** switches between Free and Pro for demos.
 
-- All data lives in your browser (localStorage). Passwords are stored as hashes. **Settings → Delete workspace** starts over.
-- Venmo has no public payments API, so the payment link opens a real Venmo pay link and then asks "Did it go through?" A production version would reconcile automatically by matching the tag code in the payment note.
-- Open a payment link in a second tab: paying there updates the treasurer's overview live.
-- Light and dark themes follow the system by default. Switch from the account menu, Profile, or the landing page.
+**Coming in v2** (code kept, hidden, listed in Settings): reimbursement queue, treasurer handoff, one-tap reminders, event budgets. In v1, funding packets read expenses added with the **Add expense** form on an event or the Packets page (vendor, amount, purpose, receipt).
+
+### Payment links
+
+- The Venmo note puts the code first (`PT-EV-FORMAL Fall Formal`), and the page says "Keep the code in the note so your payment is counted."
+- Event links have a 1–4 ticket picker (`x2` goes in the note) and "Paying for someone else too?", which records one payment per member covered.
+- On a computer, where the link can't open the Venmo app, the page shows a QR code plus the @handle, amount, and exact note to type.
+- Officers get **Copy group chat message** with the event, price, link, and a reminder to keep the code. Tip: pin it and post it before announcing the event. The first copy records when the link was shared.
+
+### Statement matching (`/match`)
+
+Upload a Venmo statement CSV (Venmo → Me → Statements → Download CSV). Columns are found by header name, so Venmo's title, balance, and disclaimer rows are ignored. Each incoming payment goes through these rules in order:
+
+1. **Code in the note** → that event or dues.
+2. **Amount is a whole multiple of the price** → quantity = amount ÷ price.
+3. **Paid before the link was first shared** → review, not auto-match.
+4. **"From" name → member**, using fuzzy first/last name matching ("Sam" for Samuel, "C Wu" flagged as ambiguous) plus saved aliases.
+
+Rows that pass every rule are recorded automatically, with the Venmo transaction ID as the reference so re-importing a file never duplicates. If someone already tapped "Yes, I paid" on the link, the statement row confirms that payment instead of adding a second one. Everything else goes to **Needs review** with the raw note, amount, date, sender, a suggested match, and the reason. Officers can **Confirm**, **Reassign** (event, member, quantity, and "Remember this name" for a parent's account), or **Ignore**.
+
+**Try with sample statement** loads `public/sample-venmo-statement.csv`, a $15 Fall Formal statement that reproduces every failure seen in testing: deleted codes, a parent's account, 2 tickets for $30 with an edited note, a split with a friend, a payment before the link was posted, vague notes like "for sat", and money going out. It adds the Fall Formal event and the people on the statement if they aren't in the workspace yet, then shows: "31 of 35 link payments matched automatically, 4 need review."
+
+### Accounts
+
+- A new workspace starts empty. Whoever sets it up is the treasurer. Everyone else signs up at `/join`; the treasurer can make people officers on the Members page.
+- Officers see everything. Members see only their own payments and what's coming up.
+- Sign-ins are kept per browser tab, so one tab can be the treasurer and another a member.
+
+## 2-minute demo
+
+1. **Set up a workspace** on the landing page. Pick "Business profile" for the Venmo question and set dues to $40 to see the fee note.
+2. **Match payments → Try with sample statement.** Read the summary, then work the review queue: Reassign Linda Park to Hannah Park with "Remember this name", Confirm Mateo Cruz ("for sat"), and Ignore the 🍕 payment.
+3. **Events → Fall Formal.** Copy the group chat message, add an expense with a receipt photo, then click **Open ↗** on the payment link to see the ticket picker and, on a laptop, the QR code.
+4. **Funding packets.** Preview the packet, click **Print or save as PDF**, and hold a Pro spot in the upgrade dialog. Then print.
+5. **Overview and Ledger.** The balance and every numbered entry, including the ones matched from the statement.
 
 ## Run it locally
 
@@ -51,56 +66,41 @@ npm install
 npm run dev
 ```
 
-Then open http://localhost:3000.
+Then open http://localhost:3000. All data lives in your browser (localStorage); saved data from older versions is migrated on load. **Settings → Delete workspace** starts over.
 
-## Put it on GitHub
-
-```bash
-cd paper-trail
-git init
-git add .
-git commit -m "Paper Trail prototype v1.0"
-git branch -M main
-git remote add origin https://github.com/YOUR-USERNAME/paper-trail.git
-git push -u origin main
-```
-
-(Create an empty repo named `paper-trail` on github.com first, without a README.)
-
-## Deploy a shareable link
-
-1. Go to https://vercel.com and sign in with GitHub.
-2. Click **Add New → Project**, pick the `paper-trail` repo, and click **Deploy**. No settings needed.
-3. Vercel gives you a URL like `paper-trail-xyz.vercel.app` to put in the prototype doc and slides.
+Deploys to Netlify from `main` (see `netlify.toml`).
 
 ## Stack
 
-Next.js (App Router) · React · TypeScript · Tailwind CSS
+Next.js (App Router) · React · TypeScript · Tailwind CSS · `qrcode`
 
 ## Project layout
 
 ```
 app/
   page.tsx               Landing
-  onboarding/            Workspace setup
-  pay/[id]/              Public payment link (no login)
+  onboarding/ login/ join/
+  pay/[id]/              Payment link
   (app)/                 Everything inside the sidebar shell
-    dashboard/ ledger/ dues/ events/ reimbursements/ packets/ members/ handoff/ settings/ me/ profile/ receipt/
-  login/ join/           Sign in and sign up
-components/              Shared UI (shell, org form, collection panel, reimbursement pieces)
+    dashboard/ ledger/ match/ dues/ events/ packets/ members/ settings/ me/ profile/ receipt/
+    reimbursements/ handoff/   v2, hidden
+components/              Shared UI (shell, org form, payment link, expenses, upgrade dialog, receipt)
 lib/
   types.ts               Data model
+  migrate.ts             Upgrades saved state to the current version
+  statement.ts           Venmo CSV parser
+  matching.ts            Matching rules and review suggestions
+  sample.ts              Sample statement's event and roster
+  features.ts            v1 scope, v2 list, Venmo fee, Pro prices
+  store.tsx              Browser storage and sign-in session
   seed.ts                Empty starting workspace
-  store.tsx              Browser storage and sign-in session (swap for a database later)
-  auth.ts                Password hashing and temporary passwords
-  theme.ts               Light/dark theme
-  selectors.ts           Balance, collection, and obligation math
-public/                  PWA manifest and icon
+public/
+  sample-venmo-statement.csv
 ```
 
 ## Next steps past the prototype
 
-- Server-side accounts and a database (e.g. Supabase) instead of browser storage
-- Automatic payment matching from Venmo, Zelle, or a bank feed
-- Funding packet templates matched to specific universities and grant funders
-- Email or text delivery for reminders
+- Server-side accounts and a database, so the sign-up link works across devices
+- Real deposits and billing for Pro
+- Pulling Venmo business statements automatically instead of uploading a CSV
+- The v2 features above

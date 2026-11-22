@@ -9,14 +9,46 @@ import { Button, ButtonLink, Stamp, ThemeSwitch } from "@/components/ui";
 import Receipt from "@/components/Receipt";
 
 // A page out of a group's book, so people see the product instead of reading about it.
-const SAMPLE: { no: string; date: string; entry: string; tag: string; inn?: string; out?: string; bal: string; note?: string }[] = [
+const SAMPLE: {
+  no: string;
+  date: string;
+  entry: string;
+  tag: string;
+  inn?: string;
+  out?: string;
+  bal: string;
+  note?: string;
+}[] = [
   { no: "0228", date: "Oct 12", entry: "Hannah Park, Fall dues", tag: "PT-DUES", inn: "40.00", bal: "2,302.50" },
   { no: "0229", date: "Oct 13", entry: "Chris Wu, Game Night", tag: "PT-EV-GAMES", inn: "5.00", bal: "2,307.50" },
-  { no: "0230", date: "Oct 13", entry: "Paid back M. Chen, H-E-B snacks", tag: "REIMB", out: "86.42", bal: "2,221.08", note: "AR" },
+  {
+    no: "0230",
+    date: "Oct 13",
+    entry: "Paid back M. Chen, H-E-B snacks",
+    tag: "REIMB",
+    out: "86.42",
+    bal: "2,221.08",
+    note: "AR",
+  },
   { no: "0231", date: "Oct 14", entry: "Maya Chen, Fall Formal", tag: "PT-EV-FORMAL", inn: "35.00", bal: "2,256.08" },
-  { no: "0232", date: "Oct 14", entry: "Diego Flores, Fall Formal", tag: "PT-EV-FORMAL", inn: "35.00", bal: "2,291.08" },
+  {
+    no: "0232",
+    date: "Oct 14",
+    entry: "Diego Flores, Fall Formal",
+    tag: "PT-EV-FORMAL",
+    inn: "35.00",
+    bal: "2,291.08",
+  },
   { no: "0233", date: "Oct 15", entry: "Leah Patel, Fall dues (cash)", tag: "PT-DUES", inn: "40.00", bal: "2,331.08" },
-  { no: "0234", date: "Oct 16", entry: "Paid back J. Lee, ballroom deposit", tag: "REIMB", out: "400.00", bal: "1,931.08", note: "AR" },
+  {
+    no: "0234",
+    date: "Oct 16",
+    entry: "Paid back J. Lee, ballroom deposit",
+    tag: "REIMB",
+    out: "400.00",
+    bal: "1,931.08",
+    note: "AR",
+  },
 ];
 
 export default function Landing() {
@@ -52,15 +84,33 @@ export default function Landing() {
       <section className="mx-auto grid max-w-6xl gap-12 px-5 pt-8 pb-20 md:pt-16 lg:pb-72 lg:grid-cols-[1fr_1.15fr] lg:items-start">
         <div>
           <p className="num text-xs uppercase tracking-[0.14em] text-muted">
-            For student orgs, PTAs, teams, and small nonprofits
+            For student orgs · youth sports teams
           </p>
           <h1 className="mt-4 text-[44px] font-semibold leading-[1.02] tracking-[-0.035em] md:text-[64px]">
             Your treasurer&apos;s Venmo shouldn&apos;t be your group&apos;s bank.
           </h1>
           <p className="mt-6 max-w-lg text-[17px] leading-relaxed text-muted">
-            Paper Trail keeps one shared book on top of the payment apps your group already uses. Every
-            payment comes in tagged, every receipt has a place, and the record outlasts every officer change.
+            Paper Trail keeps one shared book on top of the Venmo account your group already uses. Members pay through a
+            link, and your Venmo statement matches itself to the right event and the right person.
           </p>
+          <ol className="mt-8 max-w-lg border-t border-ink text-sm">
+            {[
+              ["Event payment links", "One link per event. The code in the Venmo note tells us what it's for."],
+              [
+                "Statement matching",
+                "Upload your Venmo statement. Coded payments match on their own; the rest come with a suggestion.",
+              ],
+              ["Shared balance", "Officers see the same ledger. Members see what they've paid and what's coming up."],
+              ["Funding packets", "Itemized requests with receipts attached, checked before you submit. Pro."],
+            ].map(([t, d], i) => (
+              <li key={t} className="flex gap-4 border-b border-rule py-2.5">
+                <span className="num w-5 shrink-0 text-faint">{i + 1}</span>
+                <span>
+                  <span className="font-medium">{t}.</span> <span className="text-muted">{d}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
           <div className="mt-8 flex flex-wrap gap-3">
             {existing ? (
               <>

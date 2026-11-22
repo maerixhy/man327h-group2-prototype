@@ -22,7 +22,8 @@ export function migrate(raw: any): State {
     org: {
       ...org,
       modules,
-      venmoProfile: org.venmoProfile === "business" ? "business" : "personal",
+      // Groups saved before the question existed never said they had a business profile.
+      venmoProfile: raw.org?.venmoProfile === "business" ? "business" : "personal",
       plan: org.plan === "pro" ? "pro" : "free",
       aliases: Array.isArray(org.aliases) ? org.aliases : [],
     },

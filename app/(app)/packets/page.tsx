@@ -107,7 +107,7 @@ export default function Packets() {
                 className="mt-1"
               >
                 <option value="university">University student org funding request</option>
-                <option value="grant">Funder or grant expense report</option>
+                <option value="grant">Grant or sponsor expense report</option>
               </Select>
             </label>
             <div className="flex flex-wrap gap-2 pt-1">
