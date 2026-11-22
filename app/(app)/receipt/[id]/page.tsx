@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { isOfficer, memberName, tagName } from "@/lib/selectors";
 import { Empty } from "@/components/ui";
+import { tagCode } from "@/lib/util";
 import Receipt from "@/components/Receipt";
 
 export default function ReceiptPage() {
@@ -34,7 +35,7 @@ export default function ReceiptPage() {
             at: p.at,
             via: p.via,
             to: state.org.venmoHandle,
-            code: p.ref,
+            code: tagCode(p.tag),
           }}
         />
       </div>

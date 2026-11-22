@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { balance, collection, eventSpend, memberName } from "@/lib/selectors";
 import { SHOW_BUDGETS } from "@/lib/features";
-import { cap, entryNo, initials, label, longDate, money, relDays, shortDate, time } from "@/lib/util";
+import { cap, entryNo, initials, label, longDate, money, relDays, shortDate, tagCode, time } from "@/lib/util";
 import { Caption, Empty, Progress, SectionTitle } from "@/components/ui";
 import PaymentLink from "@/components/PaymentLink";
 
@@ -41,7 +41,7 @@ export default function Dashboard() {
       no: p.no as number | undefined,
       at: p.at,
       text: `${memberName(state, p.memberId)}`,
-      sub: p.ref,
+      sub: tagCode(p.tag),
       amount: p.amount,
       by: undefined as string | undefined,
     })),
@@ -148,7 +148,7 @@ export default function Dashboard() {
               </div>
               <Progress value={dues.pct} className="mt-2" />
               <div className="mt-4">
-                <PaymentLink path="/pay/dues" />
+                <PaymentLink path="/pay/dues" tag={{ kind: "dues" }} />
               </div>
             </section>
           )}

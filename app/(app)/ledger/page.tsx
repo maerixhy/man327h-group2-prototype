@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { balance, eventName, memberName, tagName } from "@/lib/selectors";
-import { csvCell, downloadFile, initials, money, shortDate } from "@/lib/util";
+import { csvCell, downloadFile, initials, money, shortDate, tagCode } from "@/lib/util";
 import { Button, PageHeader, Select } from "@/components/ui";
 
 type Row = {
@@ -31,10 +31,10 @@ export default function Ledger() {
       no: p.no,
       at: p.at,
       who: memberName(state, p.memberId),
-      what: `${tagName(state, p.tag)}${p.via === "venmo" ? "" : ` (${p.via})`}`,
+      what: `${tagName(state, p.tag)}${p.quantity ? ` x${p.quantity}` : ""}${p.via === "venmo" ? "" : ` (${p.via})`}`,
       category: p.tag.kind === "dues" ? "dues" : p.tag.eventId,
       amount: p.amount,
-      ref: p.ref,
+      ref: tagCode(p.tag),
       initials: p.recordedBy ? initials(memberName(state, p.recordedBy)) : undefined,
     }));
     const outs = state.reimbursements

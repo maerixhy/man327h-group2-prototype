@@ -2,14 +2,43 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useStore } from "@/lib/store";
+import type { PaymentTag } from "@/lib/types";
 import { Button } from "./ui";
 
 // The shareable link officers drop into the group chat.
-export default function PaymentLink({ path }: { path: string }) {
+// For payment links, the first copy records when the link went out: statement rows paid before
+// that can't have come through the link, so the matcher sends them to review.
+export default function PaymentLink({ path, tag }: { path: string; tag?: PaymentTag }) {
+  const { update } = useStore();
   const [origin, setOrigin] = useState("");
   const [copied, setCopied] = useState(false);
   useEffect(() => setOrigin(window.location.origin), []);
   const url = `${origin}${path}`;
+
+  const markShared = () => {
+    if (!tag) return;
+    const at = new Date().toISOString();
+    update((s) =>
+      tag.kind === "dues"
+        ? s.org.duesLinkSharedAt
+          ? s
+          : { ...s, org: { ...s.org, duesLinkSharedAt: at } }
+        : {
+            ...s,
+            events: s.events.map((e) => (e.id === tag.eventId && !e.linkSharedAt ? { ...e, linkSharedAt: at } : e)),
+          }
+    );
+  };
+
+  const copy = async (text: string, done: (v: boolean) => void) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      markShared();
+      done(true);
+      setTimeout(() => done(false), 1500);
+    } catch {}
+  };
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -17,17 +46,7 @@ export default function PaymentLink({ path }: { path: string }) {
         {url}
       </code>
       <div className="flex gap-2">
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={async () => {
-            try {
-              await navigator.clipboard.writeText(url);
-              setCopied(true);
-              setTimeout(() => setCopied(false), 1500);
-            } catch {}
-          }}
-        >
+        <Button variant="secondary" size="sm" onClick={() => copy(url, setCopied)}>
           {copied ? "Copied" : "Copy link"}
         </Button>
         <Link

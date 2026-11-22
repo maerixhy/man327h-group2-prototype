@@ -10,7 +10,7 @@ import { isV1Module, V2_ROUTES } from "@/lib/features";
 import { cap, label } from "@/lib/util";
 import { Avatar, OrgMark, ThemeSwitch } from "./ui";
 
-type NavItem = { href: string; label: string; module?: ModuleKey };
+type NavItem = { href: string; label: string; module?: ModuleKey; count?: number };
 
 // Pages anyone signed in can open. Everything else is for officers.
 const OPEN_TO_ALL = ["/me", "/profile", "/receipt"];
@@ -36,6 +36,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const officerNav: NavItem[] = [
     { href: "/dashboard", label: "Overview" },
     { href: "/ledger", label: "Ledger" },
+    { href: "/match", label: "Match payments", count: state.review.filter((r) => r.state === "open").length },
     { href: "/dues", label: "Dues", module: "dues" },
     { href: "/events", label: "Events", module: "events" },
     { href: "/reimbursements", label: "Reimbursements", module: "reimbursements" },
@@ -81,6 +82,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
                 }`}
               >
                 {n.label}
+                {!!n.count && <span className="num ml-1.5 text-[11px] font-normal text-red-ink">{n.count}</span>}
               </Link>
             );
           })}

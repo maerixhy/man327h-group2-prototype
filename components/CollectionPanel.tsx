@@ -71,9 +71,18 @@ export default function CollectionPanel({ tag, path }: { tag: PaymentTag; path: 
         </div>
         <Progress value={c.pct} className="mt-4" />
         <div className="mt-5">
-          <PaymentLink path={path} />
+          <PaymentLink path={path} tag={tag} />
           <p className="mt-2 text-xs text-muted">
-            Payments through this link carry <code className="num text-ink">{tagCode(tag)}</code> in the Venmo note.
+            Payments through this link carry <code className="num text-ink">{tagCode(tag)}</code> in the Venmo note.{" "}
+            {(() => {
+              const shared =
+                tag.kind === "dues"
+                  ? state.org.duesLinkSharedAt
+                  : state.events.find((e) => e.id === tag.eventId)?.linkSharedAt;
+              return shared
+                ? `First shared ${shortDate(shared)}.`
+                : "Copy it once you post it; payments before then go to review.";
+            })()}
           </p>
         </div>
         {sent && (
