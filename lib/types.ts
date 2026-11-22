@@ -78,6 +78,7 @@ export interface Payment {
   paidById?: string; // member who sent the money, when paying for someone else
   sender?: string; // the "From" name on the Venmo statement
   source?: "link" | "statement" | "review" | "cash";
+  venmoId?: string; // statement transaction that confirmed a link payment
 }
 
 // One incoming row from a Venmo statement CSV.

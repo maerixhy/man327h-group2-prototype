@@ -7,6 +7,7 @@ export type ReceiptData = {
   amount: number;
   payer: string;
   from?: string; // payer's Venmo handle
+  also?: string[]; // other people this payment covered
   no: number;
   id: string;
   at: string;
@@ -24,6 +25,7 @@ export default function Receipt({ r, className = "" }: { r: ReceiptData; classNa
   const rows: [string, string][] = [
     ["Paid by", r.payer],
     ...(r.from && r.via === "venmo" ? ([["From", `@${r.from}`]] as [string, string][]) : []),
+    ...(r.also?.length ? ([["Also for", r.also.join(", ")]] as [string, string][]) : []),
     ["Method", r.via === "cash" ? "Cash" : r.via === "zelle" ? "Zelle" : "Venmo"],
     ...(r.to && r.via === "venmo" ? ([["To", `@${r.to}`]] as [string, string][]) : []),
     ["Tag", r.code],

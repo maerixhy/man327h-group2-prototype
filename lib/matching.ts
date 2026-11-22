@@ -1,6 +1,6 @@
 import type { ImportSummary, Member, PaymentTag, ReviewItem, State, StatementRow, Suggestion } from "./types";
 import { addPayment, tagName } from "./selectors";
-import { label, money, tagCode, uid } from "./util";
+import { label, money, sameTag, tagCode, uid } from "./util";
 
 type Target = { tag: PaymentTag; code: string; name: string; price: number; date?: string; sharedAt?: string };
 
@@ -105,7 +105,8 @@ type Outcome =
 export function classify(s: State, row: StatementRow, list = targets(s)): Outcome {
   if (row.amount <= 0 || !/payment|charge/i.test(row.type) || (row.status && !/complete|issued/i.test(row.status)))
     return { kind: "skip" };
-  if (s.payments.some((p) => p.ref === row.id) || s.review.some((r) => r.row.id === row.id)) return { kind: "skip" };
+  if (s.payments.some((p) => p.ref === row.id || p.venmoId === row.id) || s.review.some((r) => r.row.id === row.id))
+    return { kind: "skip" };
 
   const L = label(s.org.memberLabel);
   const who = matchMember(s, row.from);
@@ -204,7 +205,14 @@ export function importStatement(s: State, rows: StatementRow[], file: string): {
     const out = classify({ ...next, review: [...next.review, ...queued] }, row, list);
     if (out.kind === "skip") summary.skipped++;
     else if (out.kind === "auto") {
-      next = recordRow(next, row, out.tag, out.memberId, out.quantity, "statement");
+      // Already recorded when they tapped "Yes, I paid" on the link: confirm it with the Venmo ID
+      // instead of adding it twice.
+      const pending = next.payments.find(
+        (p) => p.source === "link" && p.memberId === out.memberId && sameTag(p.tag, out.tag) && !p.venmoId
+      );
+      next = pending
+        ? { ...next, payments: next.payments.map((p) => (p === pending ? { ...p, venmoId: row.id, sender: row.from } : p)) }
+        : recordRow(next, row, out.tag, out.memberId, out.quantity, "statement");
       summary.linkTotal++;
       summary.linkAuto++;
     } else {
