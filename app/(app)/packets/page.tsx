@@ -7,20 +7,25 @@ import type { PacketTemplate } from "@/lib/types";
 import { csvCell, downloadFile, entryNo, longDate, money, shortDate } from "@/lib/util";
 import { Button, Card, Empty, OrgMark, PageHeader, Select, Stamp } from "@/components/ui";
 import { ExpenseForm } from "@/components/Expenses";
+import UpgradeDialog from "@/components/Upgrade";
 import { SHOW_BUDGETS } from "@/lib/features";
 
 // Builds a funding request (or a grant expense report) from the receipts already in Paper Trail,
 // and flags the problems that usually get requests denied before anyone submits.
 export default function Packets() {
   const { state, update } = useStore();
+  const [upgrade, setUpgrade] = useState<string | null>(null);
+  const pro = state.org.plan === "pro";
+  // Anyone can build and preview a packet; printing and exporting it are Pro.
+  const gated = (reason: string, run: () => void) => () => (pro ? run() : setUpgrade(reason));
   // Start on the event with the most expenses, since that's the packet most likely due.
   const [eventId, setEventId] = useState(
     () =>
       [...state.events].sort(
         (a, b) =>
           state.reimbursements.filter((r) => r.eventId === b.id).length -
-          state.reimbursements.filter((r) => r.eventId === a.id).length
-      )[0]?.id ?? ""
+          state.reimbursements.filter((r) => r.eventId === a.id).length,
+      )[0]?.id ?? "",
   );
   const ev = state.events.find((e) => e.id === eventId);
   const tpl: PacketTemplate = state.org.packetTemplate;
@@ -72,7 +77,7 @@ export default function Packets() {
     downloadFile(
       `${ev.name} ${tpl === "university" ? "funding request" : "expense report"}.csv`,
       rows.map((r) => r.map(csvCell).join(",")).join("\n"),
-      "text/csv"
+      "text/csv",
     );
   };
 
@@ -106,9 +111,15 @@ export default function Packets() {
               </Select>
             </label>
             <div className="flex flex-wrap gap-2 pt-1">
-              <Button size="sm" onClick={() => window.print()}>Print or save as PDF</Button>
-              <Button size="sm" variant="secondary" onClick={exportCsv}>
-                Download CSV
+              <Button size="sm" onClick={gated("Upgrade to print or save this packet as a PDF.", () => window.print())}>
+                Print or save as PDF{!pro && <span className="num text-[10px] opacity-80">PRO</span>}
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={gated("Upgrade to download this packet as a CSV.", exportCsv)}
+              >
+                Download CSV{!pro && <span className="num text-[10px] text-muted">PRO</span>}
               </Button>
             </div>
           </Card>
@@ -127,7 +138,9 @@ export default function Packets() {
             <ul className="mt-3 space-y-2">
               {checks.map((c) => (
                 <li key={c.text} className="text-sm">
-                  <span className={`num inline-block w-4 ${c.ok ? "text-ink" : "text-red-ink"}`}>{c.ok ? "✓" : "✗"}</span>
+                  <span className={`num inline-block w-4 ${c.ok ? "text-ink" : "text-red-ink"}`}>
+                    {c.ok ? "✓" : "✗"}
+                  </span>
                   <span className={c.ok ? "text-muted" : "text-ink"}>{c.text}</span>
                   {!c.ok && c.fix && c.fix.length > 0 && (
                     <span className="block pl-4 text-xs text-red-ink">{c.fix.join(", ")}</span>
@@ -215,7 +228,9 @@ export default function Packets() {
               <td colSpan={5} className="pt-3 text-right font-medium">
                 {tpl === "university" ? "Total requested" : "Total expenses"}
               </td>
-              <td className="num border-t-[3px] border-double border-[#1b1a17] pt-2 text-right font-semibold">{money(total)}</td>
+              <td className="num border-t-[3px] border-double border-[#1b1a17] pt-2 text-right font-semibold">
+                {money(total)}
+              </td>
             </tr>
             {tpl === "grant" && (
               <tr>
@@ -230,20 +245,22 @@ export default function Packets() {
 
         {lines.some((r) => r.receipt) && (
           <div className="mt-8 break-inside-avoid">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#69645a]">
-              Receipts
-            </div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#69645a]">Receipts</div>
             <div className="mt-3 grid grid-cols-3 gap-4">
               {lines.map((r, i) =>
                 r.receipt ? (
                   <figure key={r.id}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={r.receipt} alt={`Receipt ${i + 1}`} className="w-full rounded-[2px] border border-[#dcd6c5]" />
+                    <img
+                      src={r.receipt}
+                      alt={`Receipt ${i + 1}`}
+                      className="w-full rounded-[2px] border border-[#dcd6c5]"
+                    />
                     <figcaption className="mt-1 text-xs text-[#69645a]">
                       Exhibit {i + 1} · {r.vendor} · {money(r.amount)}
                     </figcaption>
                   </figure>
-                ) : null
+                ) : null,
               )}
             </div>
           </div>
@@ -264,9 +281,12 @@ export default function Packets() {
         </div>
         <div className="num mt-8 flex justify-between text-[10px] text-[#9b9585]">
           <span>Prepared with Paper Trail · {longDate(new Date().toISOString())}</span>
-          <span>{lines.length ? `${entryNo(lines[0].no)}–${String(lines[lines.length - 1].no).padStart(4, "0")}` : ""}</span>
+          <span>
+            {lines.length ? `${entryNo(lines[0].no)}–${String(lines[lines.length - 1].no).padStart(4, "0")}` : ""}
+          </span>
         </div>
       </div>
+      {upgrade && <UpgradeDialog reason={upgrade} onClose={() => setUpgrade(null)} />}
     </>
   );
 }

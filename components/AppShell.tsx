@@ -10,7 +10,7 @@ import { isV1Module, V2_ROUTES } from "@/lib/features";
 import { cap, label } from "@/lib/util";
 import { Avatar, OrgMark, ThemeSwitch } from "./ui";
 
-type NavItem = { href: string; label: string; module?: ModuleKey; count?: number };
+type NavItem = { href: string; label: string; module?: ModuleKey; count?: number; pro?: boolean };
 
 // Pages anyone signed in can open. Everything else is for officers.
 const OPEN_TO_ALL = ["/me", "/profile", "/receipt"];
@@ -40,7 +40,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
     { href: "/dues", label: "Dues", module: "dues" },
     { href: "/events", label: "Events", module: "events" },
     { href: "/reimbursements", label: "Reimbursements", module: "reimbursements" },
-    { href: "/packets", label: "Funding packets", module: "packets" },
+    { href: "/packets", label: "Funding packets", module: "packets", pro: state.org.plan !== "pro" },
     { href: "/members", label: cap(L.many) },
     { href: "/handoff", label: "Handoff", module: "handoff" },
     { href: "/settings", label: "Settings" },
@@ -83,6 +83,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
               >
                 {n.label}
                 {!!n.count && <span className="num ml-1.5 text-[11px] font-normal text-red-ink">{n.count}</span>}
+                {n.pro && <span className="num ml-1.5 text-[10px] font-normal text-faint">PRO</span>}
               </Link>
             );
           })}
